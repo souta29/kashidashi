@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>道具借用申請</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+  body{background:#f0f4f8;font-family:'Noto Sans JP',sans-serif;font-size:15px;color:#2c3e50;height:100dvh;display:flex;flex-direction:column;overflow:hidden;margin:0;padding:0;box-sizing:border-box;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  header{background:#1a5276;height:56px;display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+  .hico{width:36px;height:36px;background:#2e86c1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;}
+  .hinfo{flex:1;}
+  .htit{font-size:15px;font-weight:700;color:#ffffff;}
+  .hsub{font-size:11px;color:rgba(255,255,255,.6);margin-top:1px;}
+  #chat{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 12px 72px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch;}
+  .row{display:flex;gap:8px;align-items:flex-end;animation:up .25s ease;}
+  @keyframes up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .row.user{flex-direction:row-reverse;}
+  .av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;background:#1a5276;}
+  .bbl{max-width:75%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.6;word-break:break-word;white-space:pre-line;}
+  .row.bot .bbl{background:#ffffff;color:#2c3e50;border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+  .row.user .bbl{background:#1a5276;color:#ffffff;border-bottom-right-radius:4px;}
+  .row.user>div{max-width:75%;min-width:0;display:flex;flex-direction:column;align-items:flex-end;}
+  .row.user .bbl{max-width:100%;}
+  .row.user .bbl.nowrap{white-space:nowrap;}
+  .mt{font-size:10px;color:#7f8c8d;margin-bottom:4px;padding:0 4px;}
+  .row.user .mt{text-align:right;}
+  .typing{display:flex;gap:4px;align-items:center;padding:12px 16px;}
+  .typing span{width:7px;height:7px;border-radius:50%;background:#7f8c8d;animation:bo 1.2s infinite;}
+  .typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+  @keyframes bo{0%,80%,100%{transform:scale(.8);opacity:.5}40%{transform:scale(1.2);opacity:1}}
+  .vi{display:block;font-size:11px;line-height:1.45;font-weight:400;opacity:.72;margin-top:2px;letter-spacing:0;}
+  .row.user .vi{color:rgba(255,255,255,.78);}
+  .tmenu{display:flex;flex-direction:column;gap:10px;animation:up .3s ease;}
+  .mbtn{display:flex;align-items:center;gap:14px;background:#ffffff;border:1.5px solid #d5d8dc;border-radius:14px;padding:16px 18px;cursor:pointer;transition:all .15s;text-align:left;}
+  .mbtn:active{background:#f0f4f8;transform:scale(.98);}
+  .mbtn.pri{border-color:#1a5276;background:#1a5276;}
+  .mbtn.pri .mt2{color:#ffffff;}.mbtn.pri .ms{color:rgba(255,255,255,.7);}
+  .mico{font-size:28px;flex-shrink:0;}
+  .mt2{font-size:15px;font-weight:700;color:#2c3e50;}
+  .ms{font-size:12px;color:#7f8c8d;margin-top:2px;}
+  /* 協力会社案内バナー */
+  .ext-notice{background:#fff8e7;border:1.5px solid #f5c46b;border-radius:12px;padding:12px 14px;font-size:13px;color:#7a5800;line-height:1.6;animation:up .3s ease;}
+  .ext-notice .en{font-weight:700;margin-bottom:4px;font-size:14px;}
+  .icard{background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);animation:up .25s ease;}
+  .icard-hd{background:#1a5276;padding:12px 16px;color:#ffffff;font-size:13px;font-weight:500;}
+  .icard-bd{padding:16px;}
+  .icard-bd label{font-size:12px;color:#7f8c8d;display:block;margin-bottom:6px;}
+  .icard-bd input{width:100%;padding:11px 14px;border:1.5px solid #d5d8dc;border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:18px;color:#2c3e50;background:#f8f9fa;outline:none;text-align:center;letter-spacing:0.15em;font-weight:700;}
+  .icard-bd input:focus{border-color:#2e86c1;background:#ffffff;}
+  .icard-note{font-size:11px;color:#7f8c8d;margin-top:6px;line-height:1.5;}
+  .icard-ok{width:100%;margin-top:12px;padding:12px;background:#1a5276;color:#ffffff;border:none;border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:15px;font-weight:500;cursor:pointer;}
+  .nc-card{background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);animation:up .25s ease;}
+  .nc-hd{background:#1a5276;padding:12px 16px;color:#ffffff;font-size:13px;font-weight:500;}
+  .nc-bd{padding:16px;}
+  .nc-name{font-size:22px;font-weight:700;color:#2c3e50;margin-bottom:4px;}
+  .nc-id{font-size:13px;color:#7f8c8d;}
+  .nc-acts{display:flex;gap:8px;margin-top:14px;}
+  .nc-yes{flex:1;padding:11px;background:#27ae60;color:#ffffff;border:none;border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
+  .nc-no{padding:11px 16px;background:#ffffff;color:#7f8c8d;border:1.5px solid #d5d8dc;border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:14px;cursor:pointer;}
+  .sc{background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);animation:up .25s ease;}
+  .so{padding:13px 16px;border-bottom:1px solid #d5d8dc;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:10px;transition:background .1s;}
+  .so:last-child{border-bottom:none;}
+  .so:active{background:#f0f4f8;}
+  .so-m{font-weight:500;color:#2c3e50;}.so-s{font-size:12px;color:#7f8c8d;}
+  .dc{background:#ffffff;border-radius:12px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.08);animation:up .25s ease;}
+  .dc label{font-size:12px;color:#7f8c8d;display:block;margin-bottom:8px;}
+  .dc input[type=date]{width:100%;padding:10px 12px;border:1.5px solid #d5d8dc;border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:15px;color:#2c3e50;background:#f8f9fa;outline:none;}
+  .dc input:focus{border-color:#2e86c1;background:#ffffff;}
+  .dc-ok{width:100%;margin-top:12px;padding:12px;background:#1a5276;color:#ffffff;border:none;border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:15px;font-weight:500;cursor:pointer;}
+  .cc{background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);animation:up .25s ease;}
+  .cr{display:flex;padding:11px 16px;border-bottom:1px solid #d5d8dc;font-size:14px;}
+  .cr:last-child{border-bottom:none;}
+  .cl{width:90px;color:#7f8c8d;flex-shrink:0;font-size:13px;}
+  .cv{font-weight:500;color:#2c3e50;}
+  .ca{display:flex;gap:8px;padding:12px 16px;background:#f8f9fa;}
+  .ca-ok{flex:1;padding:12px;background:#27ae60;color:#ffffff;border:none;border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:15px;font-weight:700;cursor:pointer;}
+  .ca-no{padding:12px 20px;background:#ffffff;color:#7f8c8d;border:1.5px solid #d5d8dc;border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:14px;cursor:pointer;}
+  .ll{background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);animation:up .25s ease;}
+  .li{padding:14px 16px;border-bottom:1px solid #d5d8dc;display:flex;align-items:center;gap:12px;}
+  .li:last-child{border-bottom:none;}
+  .lb{flex:1;}
+  .ln{font-weight:600;font-size:14px;color:#2c3e50;}
+  .lm{font-size:12px;color:#7f8c8d;margin-top:3px;}
+  .ld{font-size:12px;margin-top:2px;color:#2c3e50;}
+  .ld.over{color:#c0392b;font-weight:500;}
+  .ld.near{color:#e67e22;font-weight:500;}
+  .lbtn{padding:8px 16px;background:#1a5276;color:#ffffff;border:none;border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:500;cursor:pointer;flex-shrink:0;}
+  .done{background:linear-gradient(135deg,#1a5276,#2e86c1);border-radius:12px;padding:24px 20px;text-align:center;color:#ffffff;box-shadow:0 4px 16px rgba(26,82,118,.3);animation:up .3s ease;}
+  .done.green{background:linear-gradient(135deg,#27ae60,#2ecc71);}
+  .di{font-size:40px;margin-bottom:12px;}
+  .dt{font-size:17px;font-weight:700;margin-bottom:6px;color:#ffffff;}
+  .ds{font-size:13px;opacity:.85;line-height:1.7;color:#ffffff;}
+  .da{display:flex;gap:8px;margin-top:16px;}
+  .dab{flex:1;padding:11px;border:none;border-radius:8px;font-family:'Noto Sans JP',sans-serif;font-size:13px;font-weight:500;cursor:pointer;}
+  .dab.gh{background:rgba(255,255,255,.2);color:#ffffff;}
+  .dab.so2{background:#ffffff;color:#1a5276;}
+  .ec{background:#fff0f0;border:1.5px solid #c0392b;border-radius:12px;padding:16px;animation:up .25s ease;}
+  .et{font-weight:700;color:#c0392b;font-size:14px;margin-bottom:6px;}
+  .eb{font-size:13px;line-height:1.6;color:#2c3e50;}
+  /* 問い合わせチャット */
+  .inq-fab{position:fixed;right:12px;bottom:12px;z-index:500;width:46px;min-width:46px;height:46px;border:none;border-radius:999px;background:#e67e22;color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.28);font-size:0;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;}
+  .inq-fab:active{transform:scale(.98);}
+  .inq-fab .inq-fab-icon{font-size:22px;}
+  .inq-fab.opening{display:none;}
+  .inq-fab.paused{background:#7f8c8d;}
+  .inq-badge{display:none;position:absolute;top:-5px;right:-5px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#c0392b;color:#fff;font-size:11px;line-height:20px;text-align:center;border:2px solid #fff;}
+  .inq-badge.show{display:block;}
+  .inq-panel{position:fixed;right:14px;bottom:14px;z-index:501;width:min(380px,calc(100vw - 28px));height:min(560px,calc(100dvh - 28px));background:#fff;border-radius:16px;box-shadow:0 14px 40px rgba(0,0,0,.32);display:none;flex-direction:column;overflow:hidden;border:1px solid #d5d8dc;}
+  .inq-panel.open{display:flex;}
+  .inq-head{background:#1a5276;color:#fff;padding:12px 14px;display:flex;align-items:center;gap:10px;}
+  .inq-title{font-weight:700;font-size:14px;flex:1;}
+  .inq-sub{font-size:10px;opacity:.75;margin-top:1px;}
+  .inq-close{border:none;background:rgba(255,255,255,.16);color:#fff;width:30px;height:30px;border-radius:50%;font-size:18px;cursor:pointer;}
+  .inq-meta{padding:10px 12px;background:#f8f9fa;border-bottom:1px solid #e5e7eb;display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .inq-meta input{width:100%;border:1px solid #d5d8dc;border-radius:8px;padding:8px 9px;font-family:'Noto Sans JP',sans-serif;font-size:12px;outline:none;background:#fff;}
+  .inq-meta input:focus{border-color:#2e86c1;}
+  .inq-meta .wide{grid-column:1/3;}
+  .inq-paused{display:none;margin:10px 12px 0;background:#fff8e7;border:1px solid #f5c46b;color:#805000;border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.6;}
+  .inq-paused.show{display:block;}
+  .inq-body{flex:1;overflow:auto;padding:12px;background:#f0f4f8;display:flex;flex-direction:column;gap:8px;}
+  .inq-empty{font-size:12px;color:#7f8c8d;line-height:1.7;background:#fff;border:1px dashed #d5d8dc;border-radius:12px;padding:12px;}
+  .inq-msg{max-width:82%;padding:9px 12px;border-radius:14px;font-size:13px;line-height:1.55;white-space:pre-wrap;word-break:break-word;}
+  .inq-msg.user{align-self:flex-end;background:#1a5276;color:#fff;border-bottom-right-radius:4px;}
+  .inq-msg.admin{align-self:flex-start;background:#fff;color:#2c3e50;border-bottom-left-radius:4px;border:1px solid #e5e7eb;}
+  .inq-msg.system{align-self:center;background:transparent;color:#7f8c8d;font-size:11px;padding:4px 0;}
+  .inq-time{font-size:10px;opacity:.75;margin-top:4px;text-align:right;}
+  .inq-foot{border-top:1px solid #e5e7eb;padding:10px;background:#fff;display:flex;gap:8px;align-items:flex-end;}
+  .inq-foot textarea{flex:1;min-height:42px;max-height:92px;resize:none;border:1.5px solid #d5d8dc;border-radius:12px;padding:10px 11px;font-family:'Noto Sans JP',sans-serif;font-size:13px;line-height:1.45;outline:none;}
+  .inq-foot textarea:focus{border-color:#2e86c1;}
+  .inq-foot.paused textarea{background:#f3f4f6;color:#9ca3af;}
+  .inq-send{width:62px;height:42px;border:none;border-radius:12px;background:#1a5276;color:#fff;font-family:'Noto Sans JP',sans-serif;font-weight:700;cursor:pointer;}
+  .inq-send:disabled{opacity:.5;cursor:default;}
+  @media(max-width:520px){.inq-fab{right:10px;bottom:10px;width:42px;min-width:42px;height:42px;padding:0}.inq-panel{right:8px;bottom:8px;width:calc(100vw - 16px);height:calc(100dvh - 16px);border-radius:14px}.inq-meta{grid-template-columns:1fr}.inq-meta .wide{grid-column:auto}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hico">🔧</div>
+  <div class="hinfo">
+    <div class="htit">道具貸出申請<span class="vi">Đăng ký mượn dụng cụ</span></div>
+    <div class="hsub">検査室 貸出管理システム<span class="vi">Hệ thống quản lý mượn trả phòng kiểm tra</span></div>
+  </div>
+</header>
+<div id="chat"></div>
+<script>
+// ===== GAS API（fetch方式）=====
+const GAS_URL='https://script.google.com/macros/s/AKfycbwotb8pN5D6SL1H98JKUw_NBJI-tySecDPyy9U2-6DsdvNgnaZPhKcVvctnUGXNYgM/exec';
+const ACTION_MAP={
+  apiGetTools:'getTools',apiGetDepts:'getDepts',apiGetRequests:'getRequests',
+  apiGetLendings:'getLendings',apiGetStatus:'getStatus',apiGetSuspendStatus:'getSuspend',
+  apiGetEmployees:'getEmployees',apiGetEmployee:'getEmployee',apiGetMyLendings:'getMyLendings'
+};
+async function apiGet(fn,...args){
+  const action=ACTION_MAP[fn]||fn;
+  const params=new URLSearchParams({action});
+  if(args[0]!==undefined) params.set('employeeId',args[0]);
+  const res=await fetch(GAS_URL+'?'+params.toString(),{redirect:'follow'});
+  const json=await res.json();
+  if(!json.ok)throw new Error(json.error||'API error');
+  return json.data;
+}
+async function apiPost(body){
+  const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),redirect:'follow'});
+  const json=await res.json();
+  if(!json.ok)throw new Error(json.error||'API error');
+  return json.data;
+}
+
+const PARTNER_ID = '0001'; // 協力会社の固定社員番号
+const PARTNER_NAME = '協力会社様';
+
+let form={},tools=[];
+const chat=document.getElementById('chat');
+function nowStr(){return new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});}
+function scrollBottom(){setTimeout(()=>chat.scrollTop=chat.scrollHeight,50);}
+function bi(jp,vi){return jp+'<span class="vi">'+vi+'</span>';}
+function bit(jp,vi){return jp+'\n'+vi;}
+
+function addMsg(content,role='bot',noAv=false){
+  const row=document.createElement('div');row.className='row '+role;
+  if(role==='bot'&&!noAv){const av=document.createElement('div');av.className='av';av.textContent='🤖';row.appendChild(av);}
+  const wrap=document.createElement('div');
+  const t=document.createElement('div');t.className='mt';t.textContent=nowStr();
+  if(typeof content==='string'){
+    const b=document.createElement('div');b.className='bbl';
+    b.style.cssText=role==='user'?'background:#1a5276;color:#ffffff;':'background:#ffffff;color:#2c3e50;';
+    b.textContent=content;
+    wrap.appendChild(t);wrap.appendChild(b);
+  }else{wrap.appendChild(t);wrap.appendChild(content);}
+  row.appendChild(wrap);chat.appendChild(row);scrollBottom();
+}
+
+function addUser(text){
+  const row=document.createElement('div');row.className='row user';
+  const wrap=document.createElement('div');
+  const t=document.createElement('div');t.className='mt';t.textContent=nowStr();
+  const b=document.createElement('div');b.className='bbl';
+  b.style.cssText='background:#1a5276;color:#ffffff;';
+  if(/^[0-9A-Za-z_\-\/]+$/.test(String(text))) b.classList.add('nowrap');
+  b.textContent=text;
+  wrap.appendChild(t);wrap.appendChild(b);row.appendChild(wrap);chat.appendChild(row);scrollBottom();
+}
+
+function showTyping(){
+  const row=document.createElement('div');row.className='row bot';
+  const av=document.createElement('div');av.className='av';av.textContent='🤖';
+  const wrap=document.createElement('div');
+  const ty=document.createElement('div');ty.className='typing';ty.innerHTML='<span></span><span></span><span></span>';
+  wrap.appendChild(ty);row.appendChild(av);row.appendChild(wrap);chat.appendChild(row);scrollBottom();return row;
+}
+function botSay(text,delay=600){
+  return new Promise(r=>{const t=showTyping();setTimeout(()=>{t.remove();addMsg(text,'bot');r();},delay);});
+}
+function fmtD(v){if(!v)return'—';return new Date(v).toLocaleDateString('ja-JP',{month:'2-digit',day:'2-digit'});}
+function daysLeft(v){return Math.ceil((new Date(v).setHours(23,59,59,999)-Date.now())/86400000);}
+function showErr(msg){const c=document.createElement('div');c.className='ec';c.innerHTML='<div class="et">エラー</div><div class="eb">'+msg+'</div>';addMsg(c,'bot',true);}
+
+function normalizeEmployeeId(v){
+  const s=String(v??'').trim().replace(/[０-９]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0)).replace(/\D/g,'');
+  if(!s)return '';
+  return s.length<4?s.padStart(4,'0'):s;
+}
+
+function isPartner(id){ return normalizeEmployeeId(id)===PARTNER_ID; }
+
+// ===== START =====
+async function start(){
+  if(window._started)return;window._started=true;
+  form={};
+  let suspend={suspended:false,toolName:''};
+  try{
+    const results=await Promise.all([apiGet('apiGetTools'),apiGet('apiGetSuspendStatus').catch(()=>({suspended:false,toolName:''}))]);
+    tools=results[0];
+    suspend=results[1]||{suspended:false,toolName:''};
+  }catch(e){window._started=false;showErr(bit('サーバーに接続できませんでした。管理者に連絡してください。','Không thể kết nối máy chủ. Vui lòng liên hệ quản lý.'));return;}
+  // 全面停止中でも返却は可能
+  if(suspend.suspended){
+    await botSay(bit('こんにちは！道具の貸出申請システムです。','Xin chào! Đây là hệ thống đăng ký mượn dụng cụ.'),400);
+    showSuspendedMenu(suspend.toolName);
+    return;
+  }
+  await botSay(bit('こんにちは！道具の貸出申請システムです。','Xin chào! Đây là hệ thống đăng ký mượn dụng cụ.'),400);
+  showTopMenu();
+}
+
+// ===== 全面停止画面 =====
+function showSuspended(toolName){
+  const tool=(toolName&&toolName.trim())?toolName.trim():'一部の道具';
+  const toolVi=(toolName&&toolName.trim())?toolName.trim():'một số dụng cụ';
+  const card=document.createElement('div');card.className='ec';
+  card.style.cssText='background:#fff8e7;border:1.5px solid #f5c46b;';
+  card.innerHTML=
+    '<div class="et" style="color:#b8860b;font-size:16px;">⚠️ 貸出を一時停止しています<span class="vi" style="color:#8a6d00;">Tạm dừng cho mượn</span></div>'+
+    '<div class="eb" style="line-height:1.9;">'+
+      '現在「<strong>'+tool+'</strong>」が行方不明のため、道具の貸出を一時停止しています。<br>'+
+      'どうしても必要な場合は、口頭で直接管理担当者に申請してください。'+
+      '<br><br>'+
+      '<span style="color:#8a6d00;">Hiện tại「<strong>'+toolVi+'</strong>」đang bị thất lạc nên việc cho mượn dụng cụ tạm thời bị dừng lại.<br>'+
+      'Nếu thực sự cần thiết, vui lòng liên hệ trực tiếp (bằng lời) với người phụ trách quản lý.</span>'+
+    '</div>';
+  addMsg(card,'bot',true);
+
+  // 停止中でも返却は可能
+  const rcard=document.createElement('div');rcard.className='tmenu';
+  const rb=document.createElement('div');rb.className='mbtn';
+  rb.innerHTML='<div class="mico">↩️</div><div><div class="mt2">'+bi('返却する','Trả dụng cụ')+'</div><div class="ms">'+bi('借りている道具の返却はできます','Vẫn có thể trả dụng cụ đang mượn')+'</div></div>';
+  let clicked=false;
+  rb.onclick=()=>{if(clicked)return;clicked=true;rcard.remove();addUser(bit('返却する','Trả dụng cụ'));form.mode='return';showEmpIdCard();};
+  rcard.appendChild(rb);
+  addMsg(rcard,'bot',true);
+}
+
+function showTopMenu(){
+  const card=document.createElement('div');card.className='tmenu';
+
+  // 協力会社案内バナー
+  const notice=document.createElement('div');notice.className='ext-notice';
+  notice.innerHTML='<div class="en">協力会社の方へ / Dành cho công ty hợp tác</div>社員番号は <strong>0001</strong> を入力してください。<span class="vi">Vui lòng nhập mã nhân viên: <strong>0001</strong></span>';
+  card.appendChild(notice);
+
+  let clicked=false;
+  const b1=document.createElement('div');b1.className='mbtn pri';
+  b1.innerHTML='<div class="mico">📋</div><div><div class="mt2">'+bi('道具を借りる','Mượn dụng cụ')+'</div><div class="ms">'+bi('新しい貸出申請を行う','Tạo yêu cầu mượn mới')+'</div></div>';
+  b1.onclick=()=>{if(clicked)return;clicked=true;card.remove();addUser(bit('道具を借りる','Mượn dụng cụ'));form.mode='lend';showEmpIdCard();};
+  const b2=document.createElement('div');b2.className='mbtn';
+  b2.innerHTML='<div class="mico">↩️</div><div><div class="mt2">'+bi('返却する','Trả dụng cụ')+'</div><div class="ms">'+bi('借りている道具を返却する','Trả dụng cụ đang mượn')+'</div></div>';
+  b2.onclick=()=>{if(clicked)return;clicked=true;card.remove();addUser(bit('返却する','Trả dụng cụ'));form.mode='return';showEmpIdCard();};
+  card.appendChild(b1);card.appendChild(b2);
+  addMsg(card,'bot',true);
+}
+
+// ===== 社員番号入力 =====
+function showEmpIdCard(){
+  botSay(bit('社員番号を入力してください。','Vui lòng nhập mã nhân viên.'),500).then(()=>{
+    const card=document.createElement('div');card.className='icard';
+    card.innerHTML='<div class="icard-hd">'+bi('社員番号を入力','Nhập mã nhân viên')+'</div><div class="icard-bd"><label>'+bi('社員番号（数字のみ）','Mã nhân viên (chỉ nhập số)')+'</label><input type="tel" id="eid-inp" inputmode="numeric" pattern="[0-9]*" placeholder="1234" autocomplete="off"><div class="icard-note">'+bi('協力会社の方は 0001 を入力してください','Công ty hợp tác vui lòng nhập 0001')+'</div><button class="icard-ok" id="eid-ok">'+bi('確認する','Xác nhận')+'</button></div>';
+    const ei=card.querySelector('#eid-inp');
+    let submitted=false;
+    const submit=async()=>{
+      if(submitted)return;
+      const val=normalizeEmployeeId(ei.value);
+      if(!val){ei.style.borderColor='#c0392b';return;}
+      submitted=true;card.remove();addUser(val);
+      form.employeeId=val;
+      // 協力会社番号の場合は名前入力をスキップ
+      if(isPartner(val)){
+        form.name=PARTNER_NAME;
+        await autoRegisterPartner();
+      }else{
+        await lookupEmployee();
+      }
+    };
+    card.querySelector('#eid-ok').onclick=submit;
+    ei.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submit();}});
+    addMsg(card,'bot',true);setTimeout(()=>ei.focus(),100);
+  });
+}
+
+// 協力会社：自動登録してそのまま確認へ
+async function autoRegisterPartner(){
+  const t=showTyping();
+  try{
+    await apiPost({action:'registerEmployee',employeeId:PARTNER_ID,name:PARTNER_NAME});
+    t.remove();
+    showPartnerConfirm();
+  }catch(e){
+    t.remove();
+    // 登録失敗しても続行（既存登録済みの可能性）
+    showPartnerConfirm();
+  }
+}
+
+function showPartnerConfirm(){
+  const card=document.createElement('div');card.className='nc-card';
+  card.innerHTML='<div class="nc-hd">'+bi('ご利用者確認','Xác nhận người dùng')+'</div><div class="nc-bd"><div class="nc-name">'+PARTNER_NAME+'</div><div class="nc-id">'+bi('社員番号：','Mã nhân viên: ')+PARTNER_ID+' （協力会社）</div><div class="nc-acts"><button class="nc-yes" id="nc-y">OK</button><button class="nc-no" id="nc-n">'+bi('違います','Không đúng')+'</button></div></div>';
+  let clicked=false;
+  card.querySelector('#nc-y').onclick=()=>{
+    if(clicked)return;clicked=true;card.remove();addUser('OK');
+    if(form.mode==='lend')askTool();else showMyLendings();
+  };
+  card.querySelector('#nc-n').onclick=()=>{
+    if(clicked)return;clicked=true;card.remove();addUser(bit('違います','Không đúng'));
+    form.employeeId='';form.name='';
+    botSay(bit('社員番号をもう一度入力してください。','Vui lòng nhập lại mã nhân viên.'),400).then(()=>showEmpIdCard());
+  };
+  addMsg(card,'bot',true);
+}
+
+// ===== 社員マスタ検索（社員用）=====
+async function lookupEmployee(){
+  const t=showTyping();
+  try{
+    const emp=await apiGet('apiGetEmployee',form.employeeId);
+    t.remove();
+    if(emp){form.name=emp.name;showNameConfirm(emp);}
+    else{await botSay(bit('初めてのご利用です。お名前を登録してください。','Đây là lần đầu sử dụng. Vui lòng đăng ký họ tên.'),500);showNameInput();}
+  }catch(e){t.remove();showErr(bit('社員情報の取得に失敗しました。','Không lấy được thông tin nhân viên.'));}
+}
+
+function showNameConfirm(emp){
+  const card=document.createElement('div');card.className='nc-card';
+  const displayId=normalizeEmployeeId(emp.employeeId||form.employeeId);
+  if(displayId)form.employeeId=displayId;
+  card.innerHTML='<div class="nc-hd">'+bi('登録情報を確認してください','Vui lòng kiểm tra thông tin đăng ký')+'</div><div class="nc-bd"><div class="nc-name">'+emp.name+'</div><div class="nc-id">'+bi('社員番号：','Mã nhân viên: ')+displayId+'</div><div class="nc-acts"><button class="nc-yes" id="nc-y">OK</button><button class="nc-no" id="nc-n">'+bi('違います','Không đúng')+'</button></div></div>';
+  let clicked=false;
+  card.querySelector('#nc-y').onclick=()=>{if(clicked)return;clicked=true;card.remove();addUser('OK');if(form.mode==='lend')askTool();else showMyLendings();};
+  card.querySelector('#nc-n').onclick=()=>{if(clicked)return;clicked=true;card.remove();addUser(bit('違います','Không đúng'));form.employeeId='';form.name='';botSay(bit('社員番号をもう一度入力してください。','Vui lòng nhập lại mã nhân viên.'),400).then(()=>showEmpIdCard());};
+  addMsg(card,'bot',true);
+}
+
+function showNameInput(){
+  const card=document.createElement('div');card.className='icard';
+  card.innerHTML='<div class="icard-hd">'+bi('お名前を入力してください（初回のみ）','Vui lòng nhập họ tên (chỉ lần đầu)')+'</div><div class="icard-bd"><label>'+bi('氏名','Họ tên')+'</label><input type="text" id="ni-inp" placeholder="山田 太郎" autocomplete="name" style="text-align:left;letter-spacing:0;font-size:16px;font-weight:400;"><button class="icard-ok" id="ni-ok">'+bi('登録して続ける','Đăng ký và tiếp tục')+'</button></div>';
+  const ni=card.querySelector('#ni-inp');
+  let submitted=false;
+  const submit=async()=>{
+    if(submitted)return;
+    const name=ni.value.trim();
+    if(!name){ni.style.borderColor='#c0392b';return;}
+    submitted=true;card.remove();addUser(name);
+    const t=showTyping();
+    try{
+      await apiPost({action:'registerEmployee',employeeId:form.employeeId,name});
+      t.remove();form.name=name;
+      await botSay('「'+name+'」さんとして登録しました。\nĐã đăng ký với tên: '+name+'.',500);
+      if(form.mode==='lend')askTool();else showMyLendings();
+    }catch(e){t.remove();showErr(bit('登録に失敗しました。管理者に連絡してください。','Đăng ký thất bại. Vui lòng liên hệ quản lý.'));}
+  };
+  card.querySelector('#ni-ok').onclick=submit;
+  ni.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submit();}});
+  addMsg(card,'bot',true);setTimeout(()=>ni.focus(),100);
+}
+
+// ===== 道具の種類選択 =====
+async function askTool(){
+  let lendings=[];
+  try{lendings=await apiGet('apiGetLendings');}catch(e){}
+  const active=lendings.filter(l=>l.status==='lending'||l.status==='pending-pickup');
+  const available=tools.filter(t=>{
+    if(t.banned===true||t.banned==='true')return false;
+    const out=active.filter(l=>String(l.toolId)===String(t.id)).length;
+    return(parseInt(t.qty)-out)>0;
+  });
+  if(tools.length===0){await botSay(bit('現在登録されている道具がありません。管理者にお問い合わせください。','Hiện chưa có dụng cụ nào được đăng ký. Vui lòng liên hệ quản lý.'));return;}
+  if(available.length===0){await botSay(bit('現在、貸出可能な道具がありません。管理者にお問い合わせください。','Hiện không có dụng cụ nào có thể cho mượn. Vui lòng liên hệ quản lý.'));return;}
+  const cats=[...new Set(available.map(t=>t.cat||'未分類'))].sort();
+  await botSay(bit('道具の種類を選んでください。','Vui lòng chọn loại dụng cụ.'),600);
+  const card=document.createElement('div');card.className='sc';
+  cats.forEach(cat=>{
+    const catTools=available.filter(t=>(t.cat||'未分類')===cat);
+    const opt=document.createElement('div');opt.className='so';
+    opt.innerHTML='<span style="font-size:18px">📂</span><div><div class="so-m">'+cat+'</div><div class="so-s">'+catTools.length+'種類<span class="vi">'+catTools.length+' loại</span></div></div>';
+    opt.onclick=()=>{addUser(cat);card.remove();askToolInCategory(cat,available);};
+    card.appendChild(opt);
+  });
+  const other=document.createElement('div');other.className='so';
+  other.innerHTML='<span style="font-size:18px">✏️</span><div><div class="so-m">'+bi('その他','Khác')+'</div><div class="so-s">'+bi('一覧にない道具','Dụng cụ không có trong danh sách')+'</div></div>';
+  other.onclick=()=>{form.toolId='other';card.remove();showOtherInput();};
+  card.appendChild(other);
+  addMsg(card,'bot',true);
+}
+
+async function askToolInCategory(cat,available){
+  const catTools=available.filter(t=>(t.cat||'未分類')===cat);
+  await botSay('「'+cat+'」の道具を選んでください。複数選択可（最大5個）\nVui lòng chọn dụng cụ. Có thể chọn tối đa 5 cái.',500);
+  let lendings=[];
+  try{lendings=await apiGet('apiGetLendings');}catch(e){}
+  const active=lendings.filter(l=>l.status==='lending'||l.status==='pending-pickup');
+  const MAX=5;
+  let selected=[];
+
+  function render(){
+    const existing=document.getElementById('multi-tool-card');
+    if(existing)existing.remove();
+    const card=document.createElement('div');card.className='sc';card.id='multi-tool-card';
+
+    catTools.forEach(t=>{
+      const out=active.filter(l=>String(l.toolId)===String(t.id)).length;
+      const avail=parseInt(t.qty)-out;
+      if(avail<=0)return;
+      const isSel=selected.some(s=>s.toolId===t.id);
+      const opt=document.createElement('div');opt.className='so';
+      opt.style.background=isSel?'#e8f4e8':'';
+      opt.innerHTML=
+        '<span style="font-size:18px">'+(isSel?'✅':'🔧')+'</span>'+
+        '<div style="flex:1"><div class="so-m">'+t.name+'</div>'+
+        '<div class="so-s">残'+avail+'点<span class="vi"> / Còn '+avail+' cái</span></div></div>'+
+        (isSel?'<span style="font-size:11px;color:#27ae60;font-weight:700;flex-shrink:0;">選択中</span>':'');
+      opt.onclick=()=>{
+        if(isSel){
+          selected=selected.filter(s=>s.toolId!==t.id);
+        }else{
+          if(selected.length>=MAX){alert('最大'+MAX+'個まで選択できます。\nChỉ có thể chọn tối đa '+MAX+' cái.');return;}
+          selected.push({toolId:t.id,toolName:t.name});
+        }
+        render();
+      };
+      card.appendChild(opt);
+    });
+
+    // 戻るボタン
+    const back=document.createElement('div');back.className='so';
+    back.innerHTML='<span style="font-size:18px">◀</span><div><div class="so-m">'+bi('道具の種類に戻る','Quay lại loại dụng cụ')+'</div></div>';
+    back.onclick=()=>{card.remove();selected=[];askTool();};
+    card.appendChild(back);
+
+    // 選択済みバー
+    if(selected.length>0){
+      const bar=document.createElement('div');
+      bar.style.cssText='padding:12px 16px;background:#f0f9f0;border-top:2px solid #27ae60;';
+      const names=selected.map(s=>s.toolName).join('、');
+      bar.innerHTML=
+        '<div style="font-size:12px;color:#2c3e50;margin-bottom:8px;">'+
+          '<strong style="color:#27ae60;">'+selected.length+'個選択中</strong>：'+names+
+        '</div>'+
+        '<button id="multi-ok" style="width:100%;padding:11px;background:#27ae60;color:#fff;border:none;border-radius:8px;font-family:\'Noto Sans JP\',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">'+
+          bi('この'+selected.length+'個で申請する','Đăng ký '+selected.length+' cái này')+
+        '</button>';
+      bar.querySelector('#multi-ok').onclick=()=>{
+        card.remove();
+        addUser(names);
+        form.multiTools=[...selected];
+        form.toolId=selected[0].toolId;
+        form.toolName=selected[0].toolName;
+        selected=[];
+        askDue();
+      };
+      card.appendChild(bar);
+    }
+
+    addMsg(card,'bot',true);
+  }
+
+  render();
+}
+
+function showOtherInput(){
+  botSay(bit('道具名を入力してください。','Vui lòng nhập tên dụng cụ.'),500).then(()=>{
+    const card=document.createElement('div');card.className='icard';
+    card.innerHTML='<div class="icard-hd">'+bi('道具名を入力','Nhập tên dụng cụ')+'</div><div class="icard-bd"><label>'+bi('道具名','Tên dụng cụ')+'</label><input type="text" id="oth-inp" placeholder="例：ノギス 200mm" style="text-align:left;letter-spacing:0;font-size:16px;font-weight:400;"><button class="icard-ok" id="oth-ok">'+bi('確定する','Xác nhận')+'</button></div>';
+    const oi=card.querySelector('#oth-inp');
+    let submitted=false;
+    const submit=()=>{
+      if(submitted)return;
+      const val=oi.value.trim();if(!val){oi.style.borderColor='#c0392b';return;}
+      submitted=true;form.toolOther=val;form.toolName=val;card.remove();addUser(val);askDue();
+    };
+    card.querySelector('#oth-ok').onclick=submit;
+    oi.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submit();}});
+    addMsg(card,'bot',true);setTimeout(()=>oi.focus(),100);
+  });
+}
+
+// ===== 返却予定日 =====
+async function askDue(){
+  await botSay(bit('返却予定日を選んでください。','Vui lòng chọn ngày dự định trả.'),600);
+  const card=document.createElement('div');card.className='dc';
+  const fmtLocal=d=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;};
+  const today=new Date();
+  const maxDate=new Date(today.getFullYear(),today.getMonth(),today.getDate()+7);
+  const defDate=new Date(today.getFullYear(),today.getMonth(),today.getDate()+3);
+  const min=fmtLocal(today),max=fmtLocal(maxDate),def=fmtLocal(defDate>maxDate?maxDate:defDate);
+  card.innerHTML='<label>'+bi('返却予定日','Ngày dự định trả')+'</label><input type="date" id="di" min="'+min+'" max="'+max+'" value="'+def+'"><div class="icard-note">'+bi('本日から最大1週間後まで選択できます','Chỉ có thể chọn trong tối đa 1 tuần kể từ hôm nay')+'</div><button class="dc-ok">'+bi('確定する','Xác nhận')+'</button>';
+  card.querySelector('.dc-ok').onclick=()=>{
+    const inp=card.querySelector('#di');const v=inp.value;
+    if(!v)return;
+    if(v<min||v>max){inp.style.borderColor='#c0392b';alert('返却予定日は本日から最大1週間後までです。');return;}
+    form.due=v;addUser(v);card.remove();showConfirm();
+  };
+  addMsg(card,'bot',true);
+}
+
+// ===== 確認 =====
+async function showConfirm(){
+  await botSay(bit('内容を確認してください。','Vui lòng kiểm tra nội dung.'),500);
+  const isMulti=form.multiTools&&form.multiTools.length>1;
+  const toolLabel=isMulti
+    ?form.multiTools.map(t=>t.toolName).join('、')
+    :(form.toolId==='other'?form.toolOther:form.toolName);
+  const card=document.createElement('div');card.className='cc';
+  const toolRow=isMulti
+    ?'<div class="cr"><span class="cl">'+bi('道具名','Tên dụng cụ')+'</span><span class="cv" style="font-size:13px;line-height:1.6;">'+toolLabel+'<br><span style="color:#27ae60;font-size:11px;">'+form.multiTools.length+'件を別々に申請します / '+form.multiTools.length+' yêu cầu riêng</span></span></div>'
+    :'<div class="cr"><span class="cl">'+bi('道具名','Tên dụng cụ')+'</span><span class="cv">'+toolLabel+'</span></div>';
+  card.innerHTML=
+    '<div class="cr"><span class="cl">'+bi('社員番号','Mã NV')+'</span><span class="cv">'+form.employeeId+'</span></div>'+
+    '<div class="cr"><span class="cl">'+bi('氏名','Họ tên')+'</span><span class="cv">'+form.name+'</span></div>'+
+    toolRow+
+    '<div class="cr"><span class="cl">'+bi('返却予定日','Ngày trả')+'</span><span class="cv">'+form.due+'</span></div>'+
+    '<div class="ca"><button class="ca-ok" id="cy">'+bi('この内容で申請する','Gửi đăng ký với nội dung này')+'</button><button class="ca-no" id="cn">'+bi('やり直す','Làm lại')+'</button></div>';
+  let clicked=false;
+  card.querySelector('#cy').onclick=()=>{if(clicked)return;clicked=true;card.remove();submitRequest();};
+  card.querySelector('#cn').onclick=()=>{if(clicked)return;clicked=true;card.remove();form={mode:'lend',employeeId:form.employeeId,name:form.name};form.multiTools=[];botSay(bit('道具の選択からやり直します。','Sẽ chọn lại từ bước chọn dụng cụ.'),400).then(()=>askTool());};
+  addMsg(card,'bot',true);
+}
+
+// ===== 申請送信 =====
+async function submitRequest(){
+  const t=showTyping();
+  // 複数選択の場合は1件ずつ別申請、単一の場合は従来通り
+  const targets=form.multiTools&&form.multiTools.length>0
+    ?form.multiTools
+    :[{toolId:form.toolId,toolName:form.toolId==='other'?form.toolOther:form.toolName}];
+  try{
+    const results=[];
+    for(const tool of targets){
+      const result=await apiPost({action:'submitRequest',employeeId:form.employeeId,name:form.name,toolId:tool.toolId,toolName:tool.toolName,due:form.due});
+      results.push(result);
+    }
+    t.remove();
+    const count=targets.length;
+    const names=targets.map(t=>t.toolName).join('、');
+    const card=document.createElement('div');card.className='done';
+    card.innerHTML=
+      '<div class="di">✅</div>'+
+      '<div class="dt">'+bi('申請が完了しました','Đăng ký đã hoàn tất')+'</div>'+
+      '<div class="ds">'+(count>1?count+'件の申請を送信しました。<br><span style="font-size:12px;opacity:.85;">'+names+'</span><br><br>':'')+
+      '管理者が確認次第、届けに参ります。<br><span class="vi">Quản lý sẽ mang dụng cụ đến sau khi xác nhận.</span></div>'+
+      '<div class="da"><button class="dab so2" id="bn">'+bi('トップに戻る','Về đầu')+'</button></div>';
+    card.querySelector('#bn').onclick=()=>{card.remove();window._started=false;start();};
+    addMsg(card,'bot',true);
+    form.multiTools=[];
+  }catch(e){t.remove();showErr(bit('申請の送信に失敗しました。もう一度お試しください。','Gửi đăng ký thất bại. Vui lòng thử lại.'));}
+}
+
+// ===== 返却一覧 =====
+async function showMyLendings(){
+  const t=showTyping();
+  try{
+    const myLendings=await apiGet('apiGetMyLendings',form.employeeId);
+    t.remove();
+    if(myLendings.length===0){
+      await botSay((form.name||form.employeeId)+'さんが借りている道具はありません。\nKhông có dụng cụ nào đang được mượn.',600);
+      const card=document.createElement('div');card.className='done green';
+      card.innerHTML='<div class="di">📭</div><div class="dt">'+bi('貸出中の道具はありません','Không có dụng cụ đang mượn')+'</div><div class="da"><button class="dab so2" id="bn">'+bi('トップに戻る','Về đầu')+'</button></div>';
+      card.querySelector('#bn').onclick=()=>{card.remove();window._started=false;start();};
+      addMsg(card,'bot',true);return;
+    }
+    const MAX_RET=5;
+    await botSay((form.name||form.employeeId)+'さんが借りている道具が'+myLendings.length+'件あります。\n返却する道具を選んでください（最大5個）。\nCó '+myLendings.length+' dụng cụ đang mượn. Vui lòng chọn (tối đa 5 cái).',600);
+
+    let retSelected=[];
+
+    function renderReturnList(){
+      const existing=document.getElementById('return-list-card');
+      if(existing)existing.remove();
+      const list=document.createElement('div');list.className='ll';list.id='return-list-card';
+
+      myLendings.forEach(l=>{
+        const dl=l.due?daysLeft(l.due):null;
+        const dueClass=dl===null?'':(dl<0?'over':dl<=2?'near':'');
+        const dueStr=dl===null?'期限なし / Không có hạn trả':(dl<0?'⚠️ 期限超過 '+Math.abs(dl)+'日 / Quá hạn '+Math.abs(dl)+' ngày':'返却期限：'+fmtD(l.due)+'（残'+dl+'日）/ Hạn trả: '+fmtD(l.due));
+        const isSel=retSelected.some(s=>s.reqId===l.reqId);
+        const item=document.createElement('div');item.className='li';
+        item.style.background=isSel?'#e8f4e8':'';
+        item.innerHTML=
+          '<div class="lb">'+
+            '<div class="ln">'+(isSel?'✅':'🔧')+' '+l.toolName+'</div>'+
+            '<div class="lm">貸出日：'+fmtD(l.lentAt)+'</div>'+
+            '<div class="ld '+dueClass+'">'+dueStr+'</div>'+
+          '</div>'+
+          '<button class="lbtn" style="'+(isSel?'background:#27ae60;':'')+'">'+
+            (isSel?bi('選択中','Đã chọn'):bi('選択','Chọn'))+
+          '</button>';
+        item.querySelector('.lbtn').onclick=()=>{
+          if(isSel){
+            retSelected=retSelected.filter(s=>s.reqId!==l.reqId);
+          }else{
+            if(retSelected.length>=MAX_RET){alert('最大5個まで選択できます。\nChỉ có thể chọn tối đa 5 cái.');return;}
+            retSelected.push({reqId:l.reqId,toolName:l.toolName,due:l.due});
+          }
+          renderReturnList();
+        };
+        list.appendChild(item);
+      });
+
+      // 選択済みバー
+      if(retSelected.length>0){
+        const bar=document.createElement('div');
+        bar.style.cssText='padding:12px 16px;background:#f0f9f0;border-top:2px solid #27ae60;';
+        const names=retSelected.map(s=>s.toolName).join('、');
+        bar.innerHTML=
+          '<div style="font-size:12px;color:#2c3e50;margin-bottom:8px;">'+
+            '<strong style="color:#27ae60;">'+retSelected.length+'個選択中</strong>：'+names+
+          '</div>'+
+          '<button id="ret-ok" style="width:100%;padding:11px;background:#27ae60;color:#fff;border:none;border-radius:8px;font-family:\'Noto Sans JP\',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">'+
+            bi('この'+retSelected.length+'個を返却する','Trả '+retSelected.length+' cái này')+
+          '</button>';
+        bar.querySelector('#ret-ok').onclick=()=>{
+          list.remove();
+          addUser(names+' を返却');
+          doReturnMulti([...retSelected]);
+          retSelected=[];
+        };
+        list.appendChild(bar);
+      }
+
+      addMsg(list,'bot',true);
+    }
+
+    renderReturnList();
+  }catch(e){t.remove();showErr(bit('貸出情報の取得に失敗しました。管理者に連絡してください。','Không lấy được thông tin. Vui lòng liên hệ quản lý.'));}
+}
+
+// ===== 返却処理（複数対応）=====
+async function doReturnMulti(targets){
+  const t=showTyping();
+  try{
+    const results=[];
+    for(const item of targets){
+      const r=await apiPost({action:'confirmReturn',reqId:item.reqId,toolName:item.toolName,employeeId:form.employeeId,name:form.name,due:item.due});
+      results.push({...item,...r});
+    }
+    t.remove();
+    const overdue=results.filter(r=>r.isOverdue);
+    const ok=results.filter(r=>!r.isOverdue);
+    let msg='';
+    if(ok.length>0) msg+=ok.length+'件の返却を記録しました。ありがとうございました。\nĐã xác nhận trả '+ok.length+' cái. Cảm ơn bạn.';
+    if(overdue.length>0) msg+=(msg?'\n\n':'')+'⚠️ '+overdue.length+'件が返却期限を超過しています。管理者に報告しました。\nĐã xác nhận. ⚠️ '+overdue.length+' cái quá hạn. Đã báo cho quản lý.';
+    await botSay(msg,600);
+    const card=document.createElement('div');card.className='done green';
+    card.innerHTML='<div class="di">✅</div><div class="dt">'+bi('返却完了','Đã trả xong')+'</div><div class="da"><button class="dab so2" id="bn">'+bi('トップに戻る','Về đầu')+'</button></div>';
+    card.querySelector('#bn').onclick=()=>{card.remove();window._started=false;start();};
+    addMsg(card,'bot',true);
+  }catch(e){t.remove();showErr(bit('返却処理に失敗しました。管理者に連絡してください。','Xử lý trả thất bại. Vui lòng liên hệ quản lý.'));}
+}
+
+window.getLoanChatContext=function(){
+  const f=(typeof form!=='undefined'&&form)?form:{};
+  return{employeeNo:f.employeeId||'',userName:f.name||'',department:f.department||'',toolName:f.toolName||f.toolOther||''};
+};
+
+window.addEventListener('DOMContentLoaded',()=>{start();});
+</script>
+
+<!-- 問い合わせチャット -->
+<script>
+(function(){
+  let db=null, serverTimestamp=null;
+  let activeChatId='', msgUnsub=null, settingsUnsub=null;
+  let panelOpen=false, unread=0, lastAdminCount=0, acceptingInquiries=true;
+  let firebaseReady=false;
+
+  function $(id){ return document.getElementById(id); }
+  function esc(v){ return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+  function fmtTime(ts){ try{ const d=ts&&ts.toDate?ts.toDate():(ts?new Date(ts):new Date()); return d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } }
+  function getContext(){ try{ if(typeof window.getLoanChatContext==='function') return window.getLoanChatContext()||{}; }catch(e){} return {}; }
+
+  // ===== UIは無条件で先に構築 =====
+  function buildUi(){
+    if($('inqFab')){ bindEvents(); listenReceptionSettings(); return; }
+    const fab=document.createElement('button');
+    fab.id='inqFab';fab.className='inq-fab';fab.type='button';
+    fab.title='管理人に問い合わせる / Liên hệ quản lý';
+    fab.setAttribute('aria-label','管理人に問い合わせる');
+    fab.innerHTML='<span class="inq-fab-icon">💬</span><span class="inq-badge" id="inqBadge">0</span>';
+    const panel=document.createElement('div');
+    panel.id='inqPanel';panel.className='inq-panel';
+    panel.innerHTML=`
+      <div class="inq-head">
+        <div>
+          <div class="inq-title">管理人に問い合わせ<span class="vi">Liên hệ quản lý</span></div>
+          <div class="inq-sub" id="inqStatus">接続中... / Đang kết nối...</div>
+        </div>
+        <button class="inq-close" id="inqClose" type="button">×</button>
+      </div>
+      <div class="inq-paused" id="inqPausedNotice">現在、問い合わせ受付を一時停止しています。<span class="vi">Hiện đang tạm dừng tiếp nhận liên hệ.</span></div>
+      <div class="inq-body" id="inqBody">
+        <div class="inq-empty">問い合わせ内容を入力して送信してください。<span class="vi">Nhập nội dung rồi gửi.</span></div>
+      </div>
+      <div class="inq-foot" id="inqFoot">
+        <textarea id="inqText" placeholder="問い合わせ内容を入力... / Nhập nội dung..." rows="1"></textarea>
+        <button class="inq-send" id="inqSend" type="button">送信<span class="vi">Gửi</span></button>
+      </div>`;
+    document.body.appendChild(fab);
+    document.body.appendChild(panel);
+
+    fab.onclick=togglePanel;
+    $('inqClose').onclick=closePanel;
+    $('inqSend').onclick=sendMessage;
+    $('inqText').addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} });
+    $('inqText').addEventListener('input',function(e){ e.target.style.height='auto'; e.target.style.height=Math.min(e.target.scrollHeight,92)+'px'; });
+  }
+
+  function openPanel(){ panelOpen=true; $('inqPanel').classList.add('open'); $('inqFab').classList.add('opening'); unread=0; updateBadge(); if(acceptingInquiries)setTimeout(()=>$('inqText')&&$('inqText').focus(),50); }
+  function closePanel(){ panelOpen=false; $('inqPanel').classList.remove('open'); $('inqFab').classList.remove('opening'); }
+  function togglePanel(){ panelOpen?closePanel():openPanel(); }
+  function updateBadge(){ const b=$('inqBadge');if(!b)return; b.textContent=String(unread); b.classList.toggle('show',unread>0); }
+  function setStatus(t){ if($('inqStatus'))$('inqStatus').textContent=t; }
+
+  function applyReceptionState(){
+    const paused=!acceptingInquiries;
+    if($('inqFab'))$('inqFab').classList.toggle('paused',paused);
+    if($('inqPausedNotice'))$('inqPausedNotice').classList.toggle('show',paused);
+    if($('inqFoot'))$('inqFoot').classList.toggle('paused',paused);
+    const input=$('inqText'),send=$('inqSend');
+    if(input){ input.disabled=paused; input.placeholder=paused?'問い合わせ受付停止中':'問い合わせ内容を入力...'; }
+    if(send)send.disabled=paused;
+    if(paused)setStatus('受付停止中 / Tạm dừng');
+    else if(firebaseReady)setStatus('接続中 / Đang kết nối');
+  }
+
+  // ===== Firebase初期化 =====
+  function loadScript(src){
+    return new Promise(function(resolve,reject){
+      const s=document.createElement('script');
+      s.src=src;s.onload=resolve;s.onerror=reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  function initFirebase(){
+    const firebaseConfig={
+      apiKey:"AIzaSyA3P4HSxyJKsF9L_DiooWj2srhEv444n-E",
+      authDomain:"kashidashi-chat.firebaseapp.com",
+      projectId:"kashidashi-chat",
+      storageBucket:"kashidashi-chat.firebasestorage.app",
+      messagingSenderId:"928741357405",
+      appId:"1:928741357405:web:ad028089f99be822fd9ab4"
+    };
+    if(!window.firebase||!firebase.initializeApp){ setStatus('接続エラー / Lỗi kết nối'); return; }
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    db=firebase.firestore();
+    serverTimestamp=firebase.firestore.FieldValue.serverTimestamp;
+    firebaseReady=true;
+    setStatus('接続中 / Đang kết nối');
+    listenReceptionSettings();
+  }
+
+  function listenReceptionSettings(){
+    if(settingsUnsub||!db)return;
+    settingsUnsub=db.collection('settings').doc('chat').onSnapshot(function(snap){
+      const data=snap.exists?snap.data():{};
+      acceptingInquiries=data.accepting!==false;
+      applyReceptionState();
+    },function(err){ console.error('settings error:',err); });
+  }
+
+  function renderMessages(docs){
+    const body=$('inqBody');if(!body)return;
+    if(!docs.length){ body.innerHTML='<div class="inq-empty">まだメッセージはありません。<span class="vi">Chưa có tin nhắn.</span></div>'; return; }
+    body.innerHTML=docs.map(function(d){
+      const m=d.data(),sender=m.sender==='admin'?'admin':'user',label=sender==='admin'?'管理人 / Quản lý':'あなた / Bạn';
+      return '<div class="inq-msg '+sender+'"><div>'+esc(m.text)+'</div><div class="inq-time">'+label+' ・ '+fmtTime(m.createdAt)+'</div></div>';
+    }).join('');
+    body.scrollTop=body.scrollHeight;
+    const adminCount=docs.filter(d=>d.data().sender==='admin').length;
+    if(!panelOpen&&adminCount>lastAdminCount){ unread+=adminCount-lastAdminCount; updateBadge(); }
+    lastAdminCount=adminCount;
+  }
+
+  async function ensureChat(){
+    if(activeChatId)return activeChatId;
+    const ctx=getContext();
+    const ref=await db.collection('chats').add({
+      userUid:'anonymous',
+      userName:ctx.userName||'未入力',
+      employeeNo:ctx.employeeNo||'',
+      department:ctx.department||'',
+      source:'貸出申請画面',
+      toolName:ctx.toolName||'',
+      status:'open',lastMessage:'',lastSender:'user',
+      createdAt:serverTimestamp(),updatedAt:serverTimestamp()
+    });
+    activeChatId=ref.id;
+    listenMessages(activeChatId);
+    return activeChatId;
+  }
+
+  async function sendMessage(){
+    if(!firebaseReady){ alert('接続中です。少し待ってからお試しください。'); return; }
+    if(!acceptingInquiries){ alert('現在、問い合わせ受付を一時停止しています。'); return; }
+    const input=$('inqText'),text=input?input.value.trim():'';
+    if(!text)return;
+    $('inqSend').disabled=true;
+    try{
+      const chatId=await ensureChat();
+      const ctx=getContext();
+      await db.collection('chats').doc(chatId).collection('messages').add({
+        sender:'user',senderName:ctx.userName||'未入力',text,
+        createdAt:serverTimestamp(),read:false
+      });
+      await db.collection('chats').doc(chatId).set({
+        userUid:'anonymous',userName:ctx.userName||'未入力',
+        employeeNo:ctx.employeeNo||'',department:ctx.department||'',
+        source:'貸出申請画面',toolName:ctx.toolName||'',
+        status:'open',lastMessage:text,lastSender:'user',updatedAt:serverTimestamp()
+      },{merge:true});
+      input.value='';input.style.height='auto';
+    }catch(e){ console.error(e); alert('送信できませんでした。'); }
+    finally{ $('inqSend').disabled=!acceptingInquiries; }
+  }
+
+  function listenMessages(chatId){
+    if(msgUnsub)msgUnsub();
+    lastAdminCount=0;
+    msgUnsub=db.collection('chats').doc(chatId).collection('messages')
+      .orderBy('createdAt','asc')
+      .onSnapshot(function(snap){ renderMessages(snap.docs); },
+      function(err){ console.error('messages error:',err); });
+  }
+
+  // ===== 起動 =====
+  function boot(){
+    buildUi(); // 💬ボタンを即表示
+    Promise.all([
+      loadScript('https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js'),
+      loadScript('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js')
+    ]).then(initFirebase).catch(function(e){ console.error('SDK load failed:',e); setStatus('接続エラー / Lỗi kết nối'); });
+  }
+
+  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',boot); }
+  else{ boot(); }
+})();
+</script>
+</body>
+</html>

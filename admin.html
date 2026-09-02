@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理者画面 — 道具貸出管理</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+  :root{--bg:#0d0f14;--surface:#141720;--surface2:#1c2030;--border:#2a3045;--accent:#f5a623;--ok:#27c97e;--warn:#f5a623;--danger:#e84040;--info:#3b9eff;--text:#d8dde8;--text2:#7a8399;--mono:'Share Tech Mono',monospace;--sans:'Noto Sans JP',sans-serif;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;}
+  header{background:var(--surface);border-bottom:2px solid var(--accent);padding:0 20px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+  .logo{font-family:var(--mono);font-size:14px;letter-spacing:0.1em;color:var(--accent);}
+  .logo span{color:var(--text2);font-size:11px;margin-left:10px;}
+  nav{background:var(--surface2);border-bottom:1px solid var(--border);display:flex;padding:0 20px;gap:2px;overflow-x:auto;}
+  .tab{padding:11px 18px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;user-select:none;}
+  .tab:hover{color:var(--text);}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .tab .nb{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:var(--danger);border-radius:50%;font-size:10px;color:#fff;margin-left:6px;font-family:var(--mono);}
+  main{padding:20px;max-width:1100px;margin:0 auto;}
+  .view{display:none;}.view.active{display:block;}
+  .sec-title{font-family:var(--mono);font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+  .sec-title::after{content:'';flex:1;height:1px;background:var(--border);}
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px;}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:14px 16px;position:relative;overflow:hidden;}
+  .stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+  .stat.s-pending::before{background:var(--info);}.stat.s-out::before{background:var(--warn);}.stat.s-over::before{background:var(--danger);}.stat.s-total::before{background:var(--text2);}
+  .stat-label{font-size:10px;color:var(--text2);letter-spacing:.08em;margin-bottom:6px;}
+  .stat-val{font-family:var(--mono);font-size:28px;}
+  .stat.s-pending .stat-val{color:var(--info);}.stat.s-out .stat-val{color:var(--warn);}.stat.s-over .stat-val{color:var(--danger);}.stat.s-total .stat-val{color:var(--text);}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:4px;margin-bottom:16px;overflow:hidden;}
+  .req-item{padding:14px 16px;border-bottom:1px solid #1e2436;display:flex;gap:12px;align-items:flex-start;}
+  .req-item:last-child{border-bottom:none;}.req-item:hover{background:#181d2a;}
+  .req-icon{width:36px;height:36px;border-radius:50%;background:rgba(59,158,255,.1);border:1px solid rgba(59,158,255,.3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .req-body{flex:1;min-width:0;}.req-name{font-weight:500;font-size:14px;}.req-detail{font-size:12px;color:var(--text2);margin-top:3px;}.req-meta{font-family:var(--mono);font-size:11px;color:var(--text2);margin-top:4px;}
+  .req-actions{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;}
+  .btn{padding:6px 14px;border:none;border-radius:3px;font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;}
+  .btn:disabled{opacity:.5;cursor:default;}
+  .btn-approve{background:var(--ok);color:#000;}.btn-approve:hover:not(:disabled){background:#33e690;}
+  .btn-reject{background:transparent;color:var(--danger);border:1px solid var(--danger);}.btn-reject:hover:not(:disabled){background:var(--danger);color:#fff;}
+  .btn-return{background:var(--info);color:#fff;}.btn-return:hover:not(:disabled){background:#5ab3ff;}
+  .btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);}.btn-ghost:hover{color:var(--text);}
+  .btn-warn{background:var(--warn);color:#000;}
+  .btn-sm{padding:4px 10px;font-size:11px;}
+  .btn-danger{background:var(--danger);color:#fff;}
+  .btn-primary{background:var(--accent);color:#000;}
+  .bs{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:2px;font-family:var(--mono);font-size:10px;}
+  .bs::before{content:'';width:5px;height:5px;border-radius:50%;}
+  .bs-pending{background:rgba(59,158,255,.1);color:var(--info);border:1px solid rgba(59,158,255,.3);}.bs-pending::before{background:var(--info);}
+  .bs-out{background:rgba(245,166,35,.1);color:var(--warn);border:1px solid rgba(245,166,35,.3);}.bs-out::before{background:var(--warn);}
+  .bs-over{background:rgba(232,64,64,.1);color:var(--danger);border:1px solid rgba(232,64,64,.3);}.bs-over::before{background:var(--danger);animation:pulse 1s infinite;}
+  .bs-done{background:rgba(39,201,126,.1);color:var(--ok);border:1px solid rgba(39,201,126,.3);}.bs-done::before{background:var(--ok);}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .tbl{width:100%;border-collapse:collapse;}
+  .tbl th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);text-align:left;padding:9px 12px;border-bottom:1px solid var(--border);}
+  .tbl td{padding:11px 12px;border-bottom:1px solid #1e2436;font-size:13px;vertical-align:middle;}
+  .tbl tr:last-child td{border-bottom:none;}.tbl tr:hover td{background:#181d2a;}
+  .form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;}
+  .fg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:130px;}
+  .fg label{font-size:11px;color:var(--text2);letter-spacing:.05em;}
+  .fg input,.fg select{background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:var(--sans);font-size:13px;padding:7px 10px;outline:none;transition:border-color .15s;}
+  .fg input:focus,.fg select:focus{border-color:var(--accent);}
+  .fg select option{background:var(--surface2);}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--border);border-top:2px solid var(--danger);border-radius:4px;padding:24px;width:380px;max-width:95vw;}
+  .modal-title{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--danger);margin-bottom:16px;text-transform:uppercase;}
+  .modal-body{font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px;}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;}
+  .alert{background:rgba(232,64,64,.07);border:1px solid rgba(232,64,64,.3);border-radius:3px;padding:10px 14px;font-size:13px;color:#ff8a8a;margin-bottom:12px;display:flex;gap:8px;}
+  .empty{text-align:center;padding:40px;color:var(--text2);font-size:13px;}
+  .loading{text-align:center;padding:30px;color:var(--text2);font-size:13px;font-family:var(--mono);}
+  #toast{position:fixed;bottom:20px;right:20px;background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--ok);padding:10px 18px;border-radius:3px;font-size:13px;z-index:999;transform:translateY(60px);opacity:0;transition:all .2s;pointer-events:none;}
+  #toast.show{transform:translateY(0);opacity:1;}
+  #toast.w{border-left-color:var(--warn);}
+  #toast.e{border-left-color:var(--danger);}
+  .chat-layout{display:grid;grid-template-columns:320px 1fr;gap:14px;min-height:620px;}
+  .chat-login{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:18px;max-width:420px;}
+  .chat-login .fg{margin-bottom:12px;}
+  .chat-list{background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden;min-height:620px;}
+  .chat-list-head{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .chat-list-title{font-family:var(--mono);font-size:11px;color:var(--text2);letter-spacing:.12em;}
+  .chat-filter{display:flex;gap:6px;flex-wrap:wrap;padding:10px;border-bottom:1px solid var(--border);}
+  .chat-filter button{font-size:11px;padding:5px 8px;}
+  .chat-filter button.active{background:var(--accent);color:#000;border-color:var(--accent);}
+  .chat-reception{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:10px 12px;margin-bottom:10px;}
+  .chat-reception.open{border-color:rgba(39,201,126,.45);}
+  .chat-reception.paused{border-color:rgba(245,166,35,.65);background:rgba(245,166,35,.06);}
+  .chat-reception-main{display:flex;align-items:center;gap:10px;min-width:0;}
+  .chat-reception-dot{width:10px;height:10px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(39,201,126,.12);flex-shrink:0;}
+  .chat-reception.paused .chat-reception-dot{background:var(--warn);box-shadow:0 0 0 3px rgba(245,166,35,.16);animation:pulse 1s infinite;}
+  .chat-reception-title{font-size:13px;font-weight:700;}
+  .chat-reception-note{font-size:11px;color:var(--text2);margin-top:2px;}
+  .chat-items{max-height:545px;overflow:auto;}
+  .chat-item{padding:12px 14px;border-bottom:1px solid #1e2436;cursor:pointer;}
+  .chat-item:hover,.chat-item.active{background:#181d2a;}
+  .chat-item-top{display:flex;justify-content:space-between;gap:8px;align-items:center;}
+  .chat-item-name{font-weight:700;font-size:13px;color:var(--text);}
+  .chat-item-time{font-family:var(--mono);font-size:10px;color:var(--text2);white-space:nowrap;}
+  .chat-item-meta{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.45;}
+  .chat-item-last{font-size:12px;color:var(--text);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .chat-unread{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:50%;background:var(--danger);color:#fff;font-size:10px;margin-left:5px;}
+  .chat-room{background:var(--surface);border:1px solid var(--border);border-radius:4px;min-height:620px;display:flex;flex-direction:column;overflow:hidden;}
+  .chat-room-empty{display:flex;align-items:center;justify-content:center;height:100%;min-height:620px;color:var(--text2);font-size:13px;}
+  .chat-room-head{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .chat-room-title{font-weight:700;font-size:14px;}
+  .chat-room-meta{font-size:11px;color:var(--text2);margin-top:3px;}
+  .chat-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+  .chat-messages{flex:1;overflow:auto;padding:14px;background:#0b0d12;display:flex;flex-direction:column;gap:8px;}
+  .chat-msg{max-width:78%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.55;white-space:pre-wrap;word-break:break-word;}
+  .chat-msg.user{align-self:flex-start;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:3px;}
+  .chat-msg.admin{align-self:flex-end;background:var(--accent);color:#000;border-bottom-right-radius:3px;}
+  .chat-msg-time{font-family:var(--mono);font-size:10px;opacity:.65;margin-top:4px;text-align:right;}
+  .chat-reply{border-top:1px solid var(--border);padding:12px;background:var(--surface);display:flex;gap:8px;align-items:flex-end;}
+  .chat-reply textarea{flex:1;min-height:46px;max-height:120px;resize:none;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--sans);font-size:13px;padding:9px 10px;outline:none;}
+  .chat-reply textarea:focus{border-color:var(--accent);}
+  .chat-reply button{height:42px;min-width:76px;}
+  .chat-status-open{color:var(--info);}
+  .chat-status-progress{color:var(--warn);}
+  .chat-status-closed{color:var(--ok);}
+  @media(max-width:850px){.chat-layout{grid-template-columns:1fr}.chat-list,.chat-room,.chat-room-empty{min-height:420px}.chat-items{max-height:320px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">ADMIN <span>道具貸出管理</span></div>
+</header>
+<nav>
+  <div class="tab active" onclick="switchTab('dashboard',this)">ダッシュボード</div>
+  <div class="tab" id="tab-req" onclick="switchTab('requests',this)">申請一覧</div>
+  <div class="tab" onclick="switchTab('lending',this)">貸出中</div>
+  <div class="tab" onclick="switchTab('history',this)">履歴</div>
+  <div class="tab" onclick="switchTab('master',this)">マスタ管理</div>
+  <div class="tab" onclick="switchTab('employees',this)">社員マスタ</div>
+  <div class="tab" id="tab-chat" onclick="showAdminChatTab(this)">問い合わせ<span class="nb" id="chat-nb" style="display:none">0</span></div>
+</nav>
+<main>
+<div id="view-dashboard" class="view active">
+  <div class="card" id="suspend-panel" style="padding:16px;margin-bottom:16px">
+    <div class="sec-title" style="margin-bottom:12px">貸出の全面停止</div>
+    <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+      <div class="fg" style="flex:1;min-width:180px">
+        <label>行方不明の道具名（申請画面に表示されます）</label>
+        <input id="suspend-tool" type="text" placeholder="例：三点マイクロ 6-8mm">
+      </div>
+      <div class="fg" style="flex:0">
+        <label>&nbsp;</label>
+        <button class="btn" id="suspend-btn" onclick="toggleSuspend()">読み込み中...</button>
+      </div>
+    </div>
+    <div id="suspend-note" style="font-size:12px;color:var(--text2);margin-top:10px;line-height:1.6"></div>
+  </div>
+  <div id="alert-zone"></div>
+  <div class="stat-grid" id="stats"></div>
+  <div class="sec-title">未承認リクエスト</div>
+  <div class="card" id="dash-pending"></div>
+  <div class="sec-title">貸出中（期限近順）</div>
+  <div class="card"><table class="tbl"><thead><tr><th>道具名</th><th>借用者</th><th>社員番号</th><th>返却期限</th><th>残日数</th><th>状態</th></tr></thead><tbody id="dash-lending"></tbody></table></div>
+</div>
+<div id="view-requests" class="view">
+  <div class="sec-title">申請一覧</div>
+  <div class="card" id="req-list"></div>
+</div>
+<div id="view-lending" class="view">
+  <div class="sec-title">貸出記録の手動登録</div>
+  <div class="card" style="padding:16px">
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6">口頭で直接借りにきた場合など、システムを通さない貸出をここで記録します。登録すると下の「貸出中」一覧に追加され、返却処理もできます。</div>
+    <div class="form-row">
+      <div class="fg" style="max-width:120px"><label>社員番号</label><input id="ml-emp" type="text" inputmode="numeric" placeholder="1234"></div>
+      <div class="fg"><label>氏名</label><input id="ml-name" type="text" placeholder="山田 太郎"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>道具</label><select id="ml-tool"></select></div>
+      <div class="fg"><label>道具名（その他を選んだ場合）</label><input id="ml-toolother" type="text" placeholder="一覧にない道具名"></div>
+      <div class="fg" style="max-width:160px"><label>返却予定日</label><input id="ml-due" type="date"></div>
+      <div class="fg" style="flex:0"><label>&nbsp;</label><button class="btn btn-primary" onclick="submitManualLend()">貸出を記録</button></div>
+    </div>
+  </div>
+  <div class="sec-title">現在の貸出状況</div>
+  <div class="card"><table class="tbl"><thead><tr><th>道具名</th><th>借用者</th><th>社員番号</th><th>貸出日時</th><th>返却期限</th><th>経過</th><th>状態</th><th>操作</th></tr></thead><tbody id="lending-body"></tbody></table></div>
+</div>
+<div id="view-history" class="view">
+  <div class="sec-title">履歴</div>
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <input style="background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:var(--sans);font-size:13px;padding:7px 10px;outline:none;width:220px" type="text" id="hist-q" placeholder="氏名・道具名で絞り込み" oninput="renderHistory()">
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('hist-q').value='';renderHistory()">クリア</button>
+  </div>
+  <div class="card"><table class="tbl"><thead><tr><th>操作</th><th>道具名</th><th>借用者</th><th>社員番号</th><th>申請日時</th><th>返却期限</th><th>返却日時</th></tr></thead><tbody id="hist-body"></tbody></table></div>
+</div>
+<div id="view-master" class="view">
+  <div class="sec-title">道具マスタ</div>
+  <div class="card" style="padding:16px">
+    <div class="form-row">
+      <div class="fg"><label>道具名</label><input id="t-name" type="text" placeholder="ノギス 200mm"></div>
+      <div class="fg"><label>カテゴリ</label><input id="t-cat" type="text" placeholder="測定器"></div>
+      <div class="fg" style="max-width:80px"><label>数量</label><input id="t-qty" type="number" min="1" value="1"></div>
+      <div class="fg" style="max-width:90px"><label>警告(日)</label><input id="t-warn" type="number" min="1" value="3"></div>
+      <div class="fg" style="flex:0"><label>&nbsp;</label><button class="btn btn-primary" onclick="addTool()">追加</button></div>
+    </div>
+  </div>
+  <div class="card"><table class="tbl"><thead><tr><th>道具名</th><th>カテゴリ</th><th>数量</th><th>警告日数</th><th>貸出禁止</th><th>操作</th></tr></thead><tbody id="tools-body"></tbody></table></div>
+  <div class="sec-title" style="margin-top:24px">部署マスタ・貸出停止管理</div>
+  <div class="card" style="padding:16px">
+    <div class="form-row">
+      <div class="fg"><label>部署名</label><input id="d-name" type="text" placeholder="製造1課"></div>
+      <div class="fg" style="flex:0"><label>&nbsp;</label><button class="btn btn-primary" onclick="addDept()">追加</button></div>
+    </div>
+  </div>
+  <div class="card"><table class="tbl"><thead><tr><th>部署名</th><th>状態</th><th>停止理由</th><th>操作</th></tr></thead><tbody id="depts-body"></tbody></table></div>
+</div>
+<div id="view-employees" class="view">
+  <div class="sec-title">社員マスタ</div>
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <input style="background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:var(--sans);font-size:13px;padding:7px 10px;outline:none;width:220px" type="text" id="emp-q" placeholder="番号・名前で絞り込み" oninput="renderEmployees()">
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('emp-q').value='';renderEmployees()">クリア</button>
+  </div>
+  <div class="card"><table class="tbl"><thead><tr><th>社員番号</th><th>氏名</th><th>登録日時</th><th>操作</th></tr></thead><tbody id="emp-body"></tbody></table></div>
+</div>
+<div id="view-chat" class="view">
+  <div class="sec-title">問い合わせチャット</div>
+  <div class="loading">チャット機能を読み込み中...</div>
+</div>
+</main>
+
+<div class="modal-overlay" id="reject-modal">
+  <div class="modal">
+    <div class="modal-title">申請を拒否</div>
+    <div class="modal-body" id="reject-msg"></div>
+    <div class="fg" style="margin-bottom:14px"><label>拒否理由（任意）</label><input id="reject-reason" type="text" placeholder="在庫なし 等"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('reject-modal')">キャンセル</button>
+      <button class="btn btn-danger" onclick="confirmReject()">拒否する</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="stop-modal">
+  <div class="modal">
+    <div class="modal-title">部署を貸出停止にする</div>
+    <div class="modal-body" id="stop-msg"></div>
+    <div class="fg" style="margin-bottom:14px"><label>停止理由</label><input id="stop-reason" type="text" placeholder="無断持ち出しが発生したため"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('stop-modal')">キャンセル</button>
+      <button class="btn btn-danger" onclick="confirmStop()">停止する</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+// ===== GAS API（fetch方式）=====
+const GAS_URL='https://script.google.com/macros/s/AKfycbwotb8pN5D6SL1H98JKUw_NBJI-tySecDPyy9U2-6DsdvNgnaZPhKcVvctnUGXNYgM/exec';
+const ACTION_MAP={
+  apiGetTools:'getTools',apiGetDepts:'getDepts',apiGetRequests:'getRequests',
+  apiGetLendings:'getLendings',apiGetStatus:'getStatus',apiGetSuspendStatus:'getSuspend',
+  apiGetEmployees:'getEmployees',apiGetEmployee:'getEmployee',apiGetMyLendings:'getMyLendings'
+};
+async function apiGet(fn,...args){
+  const action=ACTION_MAP[fn]||fn;
+  const params=new URLSearchParams({action});
+  if(args[0]!==undefined) params.set('employeeId',args[0]);
+  const res=await fetch(GAS_URL+'?'+params.toString(),{redirect:'follow'});
+  const json=await res.json();
+  if(!json.ok)throw new Error(json.error||'API error');
+  return json.data;
+}
+async function apiPost(body){
+  const res=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),redirect:'follow'});
+  const json=await res.json();
+  if(!json.ok)throw new Error(json.error||'API error');
+  return json.data;
+}
+
+function text(v,fallback=''){return v===null||v===undefined?fallback:String(v);}
+function esc(v){return text(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function encArg(v){return encodeURIComponent(text(v));}
+function decArg(v){try{return decodeURIComponent(text(v));}catch(e){return text(v);}}
+function isTrue(v){if(v===true)return true;if(v===false||v==null)return false;const s=String(v).trim().toLowerCase();return s==='true'||s==='1'||s==='yes'||s==='on';}
+function normalizeEmployeeId(v){const s=String(v??'').trim().replace(/[０-９]/g,ch=>String.fromCharCode(ch.charCodeAt(0)-0xFEE0)).replace(/\D/g,'');if(!s)return '';return s.length<4?s.padStart(4,'0'):s;}
+function sameEmployeeId(a,b){const aa=normalizeEmployeeId(a),bb=normalizeEmployeeId(b);return aa!==''&&aa===bb;}
+function normStatus(v){const s=text(v).trim().toLowerCase();if(!s||s==='pending')return 'pending';if(s==='approved')return 'approved';if(s==='picked'||s==='pickup')return 'picked';if(s==='returned')return 'returned';if(s==='rejected')return 'rejected';return s;}
+function asArray(v){return Array.isArray(v)?v.filter(x=>x&&typeof x==='object'):[]; }
+function looksId(v){return /^[0-9]{10,}$/.test(text(v).trim());}
+function getFirst(obj,keys){for(const k of keys){if(obj&&obj[k]!==undefined&&obj[k]!==null&&text(obj[k]).trim()!=='')return obj[k];}return '';}
+function makeToolMap(tools){const m={};asArray(tools).forEach(t=>{if(t.id!==undefined&&t.id!==null)m[text(t.id)]=text(t.name||t.toolName);if(t.toolId!==undefined&&t.toolId!==null)m[text(t.toolId)]=text(t.name||t.toolName);});return m;}
+function normalizeReq(r,toolMap={}){
+  if(!r||typeof r!=='object')return null;
+  let o={...r};
+  o.id=getFirst(o,['id','reqId','requestId'])||o.id;
+  o.employeeId=normalizeEmployeeId(getFirst(o,['employeeId','employee_id','社員番号'])||o.employeeId);
+  o.name=getFirst(o,['name','borrower','borrowerName','借用者','氏名'])||o.name;
+  o.toolId=getFirst(o,['toolId','tool_id'])||o.toolId;
+  o.toolName=getFirst(o,['toolName','tool','tool_name','道具名'])||o.toolName;
+  o.due=getFirst(o,['due','dueDate','返却予定日'])||o.due;
+  o.at=getFirst(o,['at','createdAt','requestedAt','申請日時'])||o.at;
+  o.returnedAt=getFirst(o,['returnedAt','returnAt','返却日時'])||o.returnedAt;
+  o.status=normStatus(getFirst(o,['status','状態'])||o.status);
+  o.away=getFirst(o,['away'])||o.away;
+  if((!text(o.toolName).trim()||looksId(o.toolName))&&toolMap){
+    const candidates=[o.toolId,o.toolName].map(text).filter(Boolean);
+    for(const c of candidates){if(toolMap[c]){o.toolName=toolMap[c];break;}}
+  }
+  if(looksId(o.toolName)) o.toolName='道具名未取得（ID:'+text(o.toolName)+'）';
+  return o;
+}
+function fmtDT(v){if(!v)return'—';const d=new Date(v);return d.toLocaleDateString('ja-JP',{month:'2-digit',day:'2-digit'})+' '+d.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});}
+function fmtD(v){if(!v)return'—';return new Date(v).toLocaleDateString('ja-JP',{month:'2-digit',day:'2-digit'});}
+function daysElapsed(v){return Math.floor((Date.now()-new Date(v))/86400000);}
+function daysLeft(v){return Math.ceil((new Date(v).setHours(23,59,59,999)-Date.now())/86400000);}
+function isOver(l){return l.due&&daysLeft(l.due)<0;}
+function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='show '+type;clearTimeout(t._t);t._t=setTimeout(()=>t.className='',2600);}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function setLoading(id){const el=document.getElementById(id);if(el)el.innerHTML='<div class="loading">読み込み中...</div>';}
+
+function switchTab(name,el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='dashboard') renderDashboard();
+  if(name==='requests') renderRequests();
+  if(name==='lending'){ renderLending(); initManualLend(); }
+  if(name==='history') renderHistory();
+  if(name==='master'){renderTools();renderDepts();}
+  if(name==='employees') renderEmployees();
+}
+
+async function renderDashboard(){
+  try{
+    const [rawReqs,rawLendings,rawTools]=await Promise.all([apiGet('apiGetRequests'),apiGet('apiGetLendings'),apiGet('apiGetTools').catch(()=>[])]);
+    const toolMap=makeToolMap(rawTools);
+    const reqs=asArray(rawReqs).map(r=>normalizeReq(r,toolMap)).filter(Boolean);
+    const lendings=asArray(rawLendings).map(l=>normalizeReq(l,toolMap)).filter(Boolean);
+    const active=lendings.filter(l=>l.status==='lending'||l.status==='pending-pickup'||l.status==='approved'||l.status==='picked');
+    const pending=reqs.filter(r=>r.status==='pending');
+    const overdue=active.filter(l=>isOver(l));
+    const today=new Date().toDateString();
+    document.getElementById('stats').innerHTML=`
+      <div class="stat s-pending"><div class="stat-label">未承認リクエスト</div><div class="stat-val">${pending.length}</div></div>
+      <div class="stat s-out"><div class="stat-label">貸出中</div><div class="stat-val">${active.length}</div></div>
+      <div class="stat s-over"><div class="stat-label">期限超過</div><div class="stat-val">${overdue.length}</div></div>
+      <div class="stat s-total"><div class="stat-label">本日の申請</div><div class="stat-val">${reqs.filter(r=>r.at&&new Date(r.at).toDateString()===today).length}</div></div>`;
+    const az=document.getElementById('alert-zone');
+    az.innerHTML='';
+    overdue.forEach(l=>{az.innerHTML+=`<div class="alert">⚠️ 「${esc(l.toolName)}」${esc(l.name)}（${esc(l.employeeId)}）— 返却期限超過（${fmtD(l.due)}）</div>`;});
+    const dp=document.getElementById('dash-pending');
+    dp.innerHTML=pending.length===0?'<div class="empty">未承認のリクエストはありません</div>':pending.map(r=>reqItemHTML(r,toolMap)).join('');
+    const sorted=[...active].sort((a,b)=>(a.due||'9999')>(b.due||'9999')?1:-1);
+    document.getElementById('dash-lending').innerHTML=sorted.length===0?`<tr><td colspan="6"><div class="empty">貸出中の道具はありません</div></td></tr>`:
+      sorted.map(l=>{
+        const dl=l.due?daysLeft(l.due):null;
+        const dlStr=dl===null?'—':(dl<0?`<span style="color:var(--danger)">${Math.abs(dl)}日超過</span>`:`残${dl}日`);
+        const st=isOver(l)?'<span class="bs bs-over">超過</span>':l.status==='pending-pickup'?'<span class="bs bs-pending">取りに来る</span>':'<span class="bs bs-out">貸出中</span>';
+        return `<tr><td style="font-weight:500">${esc(l.toolName)}</td><td>${esc(l.name)}</td><td style="font-family:var(--mono);font-size:12px">${esc(l.employeeId||'—')}</td><td style="font-family:var(--mono);font-size:12px">${fmtD(l.due)}</td><td style="font-family:var(--mono);font-size:12px">${dlStr}</td><td>${st}</td></tr>`;
+      }).join('');
+    const tb=document.getElementById('tab-req');
+    tb.innerHTML='申請一覧'+(pending.length>0?`<span class="nb">${pending.length}</span>`:'');
+  }catch(e){console.error(e);showToast('データの読み込みに失敗しました','e');}
+}
+
+function reqItemHTML(r,toolMap={}){
+  r=normalizeReq(r,toolMap);if(!r)return '';
+  const status=normStatus(r.status),isPending=status==='pending';
+  const statusMap={returned:'返却済',rejected:'拒否',picked:'取得済',approved:'承認済',pending:'未承認'};
+  const bsMap={returned:'bs-done',rejected:'bs-over',picked:'bs-done',approved:'bs-out',pending:'bs-pending'};
+  const id=encArg(r.id),tn=encArg(r.toolName),nm=encArg(r.name);
+  const actions=isPending
+    ?`<button class="btn btn-approve btn-sm" onclick="approveReq(decArg('${id}'))">承認</button>
+      <button class="btn btn-reject btn-sm" onclick="openReject(decArg('${id}'),decArg('${tn}'),decArg('${nm}'))">拒否</button>`
+    :`<span class="bs ${bsMap[status]||'bs-pending'}">${esc(statusMap[status]||status)}</span>`;
+  return `<div class="req-item">
+    <div class="req-icon">📋</div>
+    <div class="req-body">
+      <div class="req-name">${esc(r.name)} <span style="font-family:var(--mono);font-size:11px;color:var(--text2)">${esc(r.employeeId)}</span></div>
+      <div class="req-detail">🔧 ${esc(r.toolName)} ／ 返却予定：${fmtD(r.due)}</div>
+      <div class="req-meta">${fmtDT(r.at)}</div>
+    </div>
+    <div class="req-actions">${actions}</div>
+  </div>`;
+}
+
+async function renderRequests(){
+  setLoading('req-list');
+  try{
+    const [rawReqs,rawTools]=await Promise.all([apiGet('apiGetRequests'),apiGet('apiGetTools').catch(()=>[])]);
+    const toolMap=makeToolMap(rawTools);
+    const list=asArray(rawReqs).map(r=>normalizeReq(r,toolMap)).filter(Boolean).reverse();
+    document.getElementById('req-list').innerHTML=list.length===0?'<div class="empty">申請がありません</div>':list.map(r=>reqItemHTML(r,toolMap)).join('');
+  }catch(e){document.getElementById('req-list').innerHTML='<div class="empty">読み込みエラー</div>';}
+}
+
+let pendingRejectId=null;
+function openReject(id,toolName,name){pendingRejectId=id;document.getElementById('reject-msg').textContent=`「${toolName}」${name} の申請を拒否しますか？`;document.getElementById('reject-reason').value='';document.getElementById('reject-modal').classList.add('open');}
+async function confirmReject(){const reason=document.getElementById('reject-reason').value.trim();closeModal('reject-modal');try{await apiPost({action:'rejectRequest',id:pendingRejectId,reason});showToast('申請を拒否しました','e');renderDashboard();renderRequests();}catch(e){showToast('操作に失敗しました','e');}}
+async function approveReq(id){try{await apiPost({action:'approveRequest',id});showToast('申請を承認しました');renderDashboard();renderRequests();}catch(e){showToast('承認に失敗しました','e');}}
+
+async function renderLending(){
+  setLoading('lending-body');
+  try{
+    const lendings=await apiGet('apiGetLendings');
+    const active=asArray(lendings).filter(l=>l&&(l.status==='lending'||l.status==='pending-pickup'));
+    const tbody=document.getElementById('lending-body');
+    if(active.length===0){tbody.innerHTML=`<tr><td colspan="8"><div class="empty">貸出中の道具はありません</div></td></tr>`;return;}
+    tbody.innerHTML=active.map(l=>{
+      const startAt=l.pickedAt||l.lentAt||'';
+      const over=isOver(l);
+      const elapsed=startAt?daysElapsed(startAt):0;
+      const dl=l.due?daysLeft(l.due):null;
+      const dlStr=dl===null?'—':(dl<0?`<span style="color:var(--danger)">${Math.abs(dl)}日超過</span>`:`残${dl}日`);
+      const st=l.status==='pending-pickup'?'<span class="bs bs-pending">取りに来る</span>':over?'<span class="bs bs-over">超過</span>':'<span class="bs bs-out">貸出中</span>';
+      const tn=String(l.toolName||'').replace(/'/g,"\\'"),nm=String(l.name||'').replace(/'/g,"\\'");
+      return `<tr><td style="font-weight:500">${esc(String(l.toolName||''))}</td><td>${esc(l.name||'')}</td><td style="font-family:var(--mono);font-size:12px">${esc(l.employeeId||'—')}</td><td style="font-family:var(--mono);font-size:11px;color:var(--text2)">${startAt?fmtDT(startAt):'—'}</td><td style="font-family:var(--mono);font-size:12px">${fmtD(l.due)}</td><td style="font-family:var(--mono);font-size:12px;color:${over?'var(--danger)':'var(--text2)'}"> ${elapsed}日 ${dlStr}</td><td>${st}</td><td><button class="btn btn-return btn-sm" onclick="processReturn('${l.requestId||l.reqId||''}','${tn}','${nm}','${l.employeeId||''}','${l.due||''}')">返却処理</button></td></tr>`;
+    }).join('');
+  }catch(e){document.getElementById('lending-body').innerHTML=`<tr><td colspan="8"><div class="empty">読み込みエラー</div></td></tr>`;}
+}
+async function processReturn(reqId,toolName,name,employeeId,due){
+  employeeId=normalizeEmployeeId(employeeId);
+  try{await apiPost({action:'processReturn',reqId,toolName,name,employeeId,due});showToast(`「${toolName}」の返却を処理しました`);renderLending();renderDashboard();}
+  catch(e){showToast('返却処理に失敗しました','e');}
+}
+
+// ===== 手動貸出登録 =====
+let manualLendInited=false;
+async function initManualLend(){
+  // 道具ドロップダウンを埋める
+  const sel=document.getElementById('ml-tool');
+  if(sel){
+    try{
+      const tools=await apiGet('apiGetTools');
+      const avail=asArray(tools).filter(t=>!(t.banned===true||t.banned==='true'));
+      sel.innerHTML='<option value="">道具を選択...</option>'+
+        avail.map(t=>`<option value="${esc(t.id)}" data-name="${esc(t.name)}">${esc(t.name)}（${esc(t.cat||'未分類')}）</option>`).join('')+
+        '<option value="__other__">その他（下の欄に入力）</option>';
+    }catch(e){ sel.innerHTML='<option value="">読み込みエラー</option>'; }
+  }
+  // 返却予定日のデフォルトを3日後に
+  const due=document.getElementById('ml-due');
+  if(due&&!due.value){
+    const d=new Date();d.setDate(d.getDate()+3);
+    due.value=d.toISOString().split('T')[0];
+  }
+  if(manualLendInited)return; manualLendInited=true;
+  // 社員番号入力で氏名を自動補完
+  const emp=document.getElementById('ml-emp');
+  if(emp){
+    emp.addEventListener('blur',async()=>{
+      const id=normalizeEmployeeId(emp.value);
+      if(!id)return;
+      try{
+        const e=await apiGet('apiGetEmployee',id);
+        if(e&&e.name){ const nm=document.getElementById('ml-name'); if(nm&&!nm.value)nm.value=e.name; }
+      }catch(err){}
+    });
+  }
+}
+
+async function submitManualLend(){
+  const empRaw=document.getElementById('ml-emp').value;
+  const employeeId=normalizeEmployeeId(empRaw);
+  const name=document.getElementById('ml-name').value.trim();
+  const sel=document.getElementById('ml-tool');
+  const other=document.getElementById('ml-toolother').value.trim();
+  const due=document.getElementById('ml-due').value;
+
+  let toolId='', toolName='';
+  const selVal=sel.value;
+  if(selVal==='__other__'||selVal===''){
+    toolName=other;
+  }else{
+    toolId=selVal;
+    const opt=sel.options[sel.selectedIndex];
+    toolName=opt?opt.getAttribute('data-name'):'';
+    // その他欄も入力されていればそちらを優先
+    if(other) toolName=other;
+  }
+
+  if(!employeeId){ showToast('社員番号を入力してください','w'); return; }
+  if(!name){ showToast('氏名を入力してください','w'); return; }
+  if(!toolName){ showToast('道具を選択または入力してください','w'); return; }
+
+  try{
+    await apiPost({action:'manualLend',employeeId,name,toolId,toolName,due});
+    showToast(`「${toolName}」の貸出を記録しました`);
+    // フォームをクリア
+    document.getElementById('ml-emp').value='';
+    document.getElementById('ml-name').value='';
+    document.getElementById('ml-toolother').value='';
+    if(sel)sel.value='';
+    renderLending();renderDashboard();
+  }catch(e){ console.error(e); showToast('記録に失敗しました','e'); }
+}
+
+async function renderHistory(){
+  const q=(document.getElementById('hist-q')?.value||'').trim().toLowerCase();
+  setLoading('hist-body');
+  try{
+    const [rawReqs,rawTools]=await Promise.all([apiGet('apiGetRequests'),apiGet('apiGetTools').catch(()=>[])]);
+    const toolMap=makeToolMap(rawTools);
+    const reqs=asArray(rawReqs).map(r=>normalizeReq(r,toolMap)).filter(Boolean);
+    const filtered=[...reqs].reverse().filter(r=>normStatus(r.status)!=='pending').filter(r=>!q||text(r.toolName).toLowerCase().includes(q)||text(r.name).toLowerCase().includes(q)||String(r.employeeId||'').includes(q)||sameEmployeeId(r.employeeId,q));
+    const tbody=document.getElementById('hist-body');
+    if(filtered.length===0){tbody.innerHTML=`<tr><td colspan="7"><div class="empty">履歴がありません</div></td></tr>`;return;}
+    tbody.innerHTML=filtered.map(r=>{
+      const status=normStatus(r.status);
+      const aLabel=status==='returned'?'<span style="color:var(--ok);font-family:var(--mono);font-size:11px">◀ 返却</span>':status==='rejected'?'<span style="color:var(--danger);font-family:var(--mono);font-size:11px">✕ 拒否</span>':'<span style="color:var(--warn);font-family:var(--mono);font-size:11px">▶ 貸出</span>';
+      return `<tr><td>${aLabel}</td><td style="font-weight:500">${esc(r.toolName)}</td><td>${esc(r.name)}</td><td style="font-family:var(--mono);font-size:12px">${esc(r.employeeId||'—')}</td><td style="font-size:12px;color:var(--text2)">${fmtDT(r.at)}</td><td style="font-size:12px;color:var(--text2)">${fmtD(r.due)}</td><td style="font-size:12px;color:var(--text2)">${r.returnedAt?fmtDT(r.returnedAt):'—'}</td></tr>`;
+    }).join('');
+  }catch(e){document.getElementById('hist-body').innerHTML=`<tr><td colspan="7"><div class="empty">読み込みエラー</div></td></tr>`;}
+}
+
+async function addTool(){
+  const name=document.getElementById('t-name').value.trim(),cat=document.getElementById('t-cat').value.trim(),qty=parseInt(document.getElementById('t-qty').value)||1,warn=parseInt(document.getElementById('t-warn').value)||3;
+  if(!name){showToast('道具名を入力してください','w');return;}
+  try{await apiPost({action:'addTool',name,cat:cat||'未分類',qty,warnDays:warn});document.getElementById('t-name').value='';document.getElementById('t-cat').value='';showToast(`「${name}」を追加しました`);renderTools();}
+  catch(e){showToast('追加に失敗しました','e');}
+}
+async function deleteTool(id){if(!confirm('削除しますか？'))return;try{await apiPost({action:'deleteTool',id});showToast('削除しました');renderTools();}catch(e){showToast('削除に失敗しました','e');}}
+async function banTool(id){if(!confirm('この道具を貸出禁止にしますか？'))return;try{await apiPost({action:'banTool',id,banned:true});showToast('貸出禁止にしました','w');renderTools();}catch(e){showToast('操作に失敗しました','e');}}
+async function unbanTool(id){try{await apiPost({action:'banTool',id,banned:false});showToast('貸出禁止を解除しました');renderTools();}catch(e){showToast('操作に失敗しました','e');}}
+async function renderTools(){
+  setLoading('tools-body');
+  try{
+    const tools=await apiGet('apiGetTools');
+    document.getElementById('tools-body').innerHTML=tools.length===0?`<tr><td colspan="6"><div class="empty">道具が登録されていません</div></td></tr>`:
+      tools.map(t=>{const banned=t.banned===true||t.banned==='true';return `<tr style="${banned?'opacity:0.6':''}"><td style="font-weight:500">${t.name}${banned?` <span class="bs bs-over" style="font-size:9px">禁止中</span>`:''}</td><td style="color:var(--text2)">${t.cat}</td><td style="font-family:var(--mono)">${t.qty}</td><td style="font-family:var(--mono)">${t.warnDays}日</td><td>${banned?`<button class="btn btn-approve btn-sm" onclick="unbanTool('${t.id}')">解除</button>`:`<button class="btn btn-warn btn-sm" onclick="banTool('${t.id}')">禁止</button>`}</td><td><button class="btn btn-danger btn-sm" onclick="deleteTool('${t.id}')">削除</button></td></tr>`;}).join('');
+  }catch(e){document.getElementById('tools-body').innerHTML=`<tr><td colspan="6"><div class="empty">読み込みエラー</div></td></tr>`;}
+}
+
+async function addDept(){const name=document.getElementById('d-name').value.trim();if(!name){showToast('部署名を入力してください','w');return;}try{await apiPost({action:'addDept',name});document.getElementById('d-name').value='';showToast(`「${name}」を追加しました`);renderDepts();}catch(e){showToast('追加に失敗しました','e');}}
+async function deleteDept(id){if(!confirm('削除しますか？'))return;try{await apiPost({action:'deleteDept',id});showToast('削除しました');renderDepts();}catch(e){showToast('削除に失敗しました','e');}}
+let pendingStopId=null;
+function openStop(id,name){pendingStopId=id;document.getElementById('stop-msg').textContent=`「${name}」を貸出停止にしますか？`;document.getElementById('stop-reason').value='';document.getElementById('stop-modal').classList.add('open');}
+async function confirmStop(){const reason=document.getElementById('stop-reason').value.trim();closeModal('stop-modal');try{await apiPost({action:'stopDept',id:pendingStopId,reason});showToast('貸出停止にしました','e');renderDepts();}catch(e){showToast('操作に失敗しました','e');}}
+async function resumeDept(id){try{await apiPost({action:'resumeDept',id});showToast('貸出を再開しました');renderDepts();}catch(e){showToast('操作に失敗しました','e');}}
+async function renderDepts(){
+  setLoading('depts-body');
+  try{
+    const depts=await apiGet('apiGetDepts');
+    document.getElementById('depts-body').innerHTML=depts.length===0?`<tr><td colspan="4"><div class="empty">部署が登録されていません</div></td></tr>`:
+      depts.map(d=>{const stopped=d.stopped==='true'||d.stopped===true,dn=(d.name||'').replace(/'/g,"\\'");return `<tr><td style="font-weight:500">${d.name}</td><td>${stopped?'<span class="bs bs-over">停止中</span>':'<span class="bs bs-done">正常</span>'}</td><td style="font-size:12px;color:var(--text2)">${d.stopReason||'—'}</td><td>${stopped?`<button class="btn btn-approve btn-sm" onclick="resumeDept('${d.id}')">再開</button>`:`<button class="btn btn-warn btn-sm" onclick="openStop('${d.id}','${dn}')">停止</button> <button class="btn btn-danger btn-sm" onclick="deleteDept('${d.id}')">削除</button>`}</td></tr>`;}).join('');
+  }catch(e){document.getElementById('depts-body').innerHTML=`<tr><td colspan="4"><div class="empty">読み込みエラー</div></td></tr>`;}
+}
+
+async function renderEmployees(){
+  const rawQ=(document.getElementById('emp-q')?.value||'').trim(),q=rawQ.toLowerCase(),qId=normalizeEmployeeId(rawQ);
+  setLoading('emp-body');
+  try{
+    const emps=asArray(await apiGet('apiGetEmployees')).map(e=>({...e,employeeId:normalizeEmployeeId(e.employeeId||'')}));
+    const filtered=q?emps.filter(e=>(qId&&normalizeEmployeeId(e.employeeId).includes(qId))||sameEmployeeId(e.employeeId,qId)||String(e.employeeId||'').includes(rawQ)||(e.name||'').toLowerCase().includes(q)):emps;
+    const tbody=document.getElementById('emp-body');
+    if(filtered.length===0){tbody.innerHTML=`<tr><td colspan="4"><div class="empty">社員が登録されていません</div></td></tr>`;return;}
+    tbody.innerHTML=filtered.map(e=>`<tr><td style="font-family:var(--mono)">${esc(e.employeeId||'')}</td><td style="font-weight:500">${esc(e.name||'')}</td><td style="font-size:12px;color:var(--text2)">${e.registeredAt?fmtDT(e.registeredAt):'—'}</td><td><button class="btn btn-danger btn-sm" onclick="deleteEmp('${encArg(e.employeeId)}')">削除</button></td></tr>`).join('');
+  }catch(e){document.getElementById('emp-body').innerHTML=`<tr><td colspan="4"><div class="empty">読み込みエラー</div></td></tr>`;}
+}
+async function deleteEmp(employeeId){
+  employeeId=normalizeEmployeeId(decArg(employeeId));
+  if(!confirm(`社員番号「${employeeId}」を削除しますか？`))return;
+  try{await apiPost({action:'deleteEmployee',employeeId});showToast('削除しました');renderEmployees();}catch(e){showToast('削除に失敗しました','e');}
+}
+
+// ===== 全面停止 =====
+let suspendState={suspended:false,toolName:''};
+async function loadSuspend(){
+  try{
+    suspendState=await apiGet('apiGetSuspendStatus')||{suspended:false,toolName:''};
+  }catch(e){ suspendState={suspended:false,toolName:''}; }
+  renderSuspendPanel();
+}
+function renderSuspendPanel(){
+  const btn=document.getElementById('suspend-btn');
+  const input=document.getElementById('suspend-tool');
+  const note=document.getElementById('suspend-note');
+  const panel=document.getElementById('suspend-panel');
+  if(!btn||!input)return;
+  if(suspendState.suspended){
+    btn.textContent='貸出を再開する';
+    btn.className='btn btn-approve';
+    if(document.activeElement!==input) input.value=suspendState.toolName||'';
+    panel.style.borderColor='var(--warn)';
+    note.innerHTML='<span style="color:var(--warn)">⚠️ 現在、貸出を全面停止中です。申請画面には停止メッセージが表示され、利用者は申請できません。</span>';
+  }else{
+    btn.textContent='貸出を全面停止する';
+    btn.className='btn btn-warn';
+    panel.style.borderColor='var(--border)';
+    note.textContent='行方不明の道具が発生した場合など、道具名を入力して停止ボタンを押すと、申請画面全体に停止メッセージが表示されます。';
+  }
+}
+async function toggleSuspend(){
+  const input=document.getElementById('suspend-tool');
+  const next=!suspendState.suspended;
+  if(next){
+    const toolName=(input.value||'').trim();
+    if(!toolName){ showToast('行方不明の道具名を入力してください','w'); input.focus(); return; }
+    if(!confirm(`「${toolName}」の行方不明により、貸出を全面停止しますか？\n申請画面に停止メッセージが表示されます。`))return;
+    try{
+      suspendState=await apiPost({action:'setSuspend',suspended:true,toolName});
+      showToast('貸出を全面停止しました','w');
+      renderSuspendPanel();
+    }catch(e){ showToast('操作に失敗しました','e'); }
+  }else{
+    if(!confirm('貸出を再開しますか？'))return;
+    try{
+      suspendState=await apiPost({action:'setSuspend',suspended:false,toolName:''});
+      showToast('貸出を再開しました');
+      renderSuspendPanel();
+    }catch(e){ showToast('操作に失敗しました','e'); }
+  }
+}
+
+loadSuspend();
+renderDashboard();
+setInterval(()=>{
+  const v=document.querySelector('.view.active')?.id;
+  if(v==='view-dashboard'){ renderDashboard(); loadSuspend(); }
+  if(v==='view-requests') renderRequests();
+  if(v==='view-lending') renderLending();
+},25000);
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+  import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+  const firebaseConfig={apiKey:"AIzaSyA3P4HSxyJKsF9L_DiooWj2srhEv444n-E",authDomain:"kashidashi-chat.firebaseapp.com",projectId:"kashidashi-chat",storageBucket:"kashidashi-chat.firebasestorage.app",messagingSenderId:"928741357405",appId:"1:928741357405:web:ad028089f99be822fd9ab4",measurementId:"G-LFPNTGJLG6"};
+  const app=initializeApp(firebaseConfig);
+  const auth=getAuth(app);
+  const db=getFirestore(app);
+
+  let chats=[],selectedChatId="",chatUnsub=null,msgUnsub=null,settingsUnsub=null,chatFilter="active",acceptingInquiries=true;
+  const $=(id)=>document.getElementById(id);
+  const esc=(v)=>String(v??"").replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  const fmt=(ts)=>{try{const d=ts?.toDate?ts.toDate():(ts?new Date(ts):new Date());return d.toLocaleDateString("ja-JP",{month:"2-digit",day:"2-digit"})+" "+d.toLocaleTimeString("ja-JP",{hour:"2-digit",minute:"2-digit"});}catch(e){return "";}};
+  const statusText=(s)=>s==="closed"?"完了":s==="progress"?"対応中":"未対応";
+  const statusClass=(s)=>s==="closed"?"chat-status-closed":s==="progress"?"chat-status-progress":"chat-status-open";
+
+  function listenReceptionSettings(){
+    if(settingsUnsub)return;
+    settingsUnsub=onSnapshot(doc(db,"settings","chat"),snap=>{
+      const data=snap.exists()?snap.data():{};
+      acceptingInquiries=data.accepting!==false;
+      updateReceptionUi();
+    },err=>{console.error(err);});
+  }
+
+  function updateReceptionUi(){
+    const box=$("chatReceptionBox"),label=$("chatReceptionLabel"),btn=$("chatReceptionToggle"),note=$("chatReceptionNote");
+    if(!box||!label||!btn)return;
+    box.className="chat-reception "+(acceptingInquiries?"open":"paused");
+    label.textContent=acceptingInquiries?"受付中":"受付一時停止中";
+    label.style.color=acceptingInquiries?"var(--ok)":"var(--warn)";
+    btn.textContent=acceptingInquiries?"受付を一時停止":"受付を再開";
+    btn.className=acceptingInquiries?"btn btn-warn btn-sm":"btn btn-approve btn-sm";
+    if(note)note.textContent=acceptingInquiries?"利用者画面から問い合わせを送信できます。":"停止中は利用者側の入力欄が無効になります。";
+  }
+
+  async function toggleReception(){
+    const next=!acceptingInquiries;
+    if(!confirm(next?"問い合わせ受付を再開しますか？":"問い合わせ受付を一時停止しますか？"))return;
+    const btn=$("chatReceptionToggle");if(btn)btn.disabled=true;
+    try{
+      await setDoc(doc(db,"settings","chat"),{accepting:next,updatedAt:serverTimestamp(),updatedBy:auth.currentUser?.email||auth.currentUser?.uid||"admin"},{merge:true});
+      window.showToast(next?"問い合わせ受付を再開しました":"問い合わせ受付を一時停止しました",next?"":"w");
+    }catch(e){console.error(e);window.showToast("受付状態の変更に失敗しました","e");}
+    finally{if(btn)btn.disabled=false;}
+  }
+
+  window.showAdminChatTab=function(el){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    $("view-chat").classList.add("active");
+    el.classList.add("active");
+    renderChatArea();
+  };
+
+  function renderChatArea(){
+    const root=$("view-chat");if(!root)return;
+    const user=auth.currentUser;
+    if(!user){
+      root.innerHTML=`<div class="sec-title">問い合わせチャット</div>
+        <div class="chat-login">
+          <div class="fg"><label>管理人メールアドレス</label><input id="chatLoginEmail" type="email" placeholder="admin@example.com"></div>
+          <div class="fg"><label>パスワード</label><input id="chatLoginPassword" type="password" placeholder="password"></div>
+          <button class="btn btn-primary" id="chatLoginBtn">ログイン</button>
+          <div style="color:var(--text2);font-size:12px;line-height:1.7;margin-top:12px">Firebase Authenticationで作成した管理人ユーザーでログインしてください。</div>
+        </div>`;
+      $("chatLoginBtn").onclick=loginAdmin;return;
+    }
+    root.innerHTML=`<div class="sec-title">問い合わせチャット</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;flex-wrap:wrap">
+        <div style="font-size:12px;color:var(--text2)">ログイン中：${esc(user.email||user.uid)}</div>
+        <button class="btn btn-ghost btn-sm" id="chatLogoutBtn">ログアウト</button>
+      </div>
+      <div class="chat-reception ${acceptingInquiries?'open':'paused'}" id="chatReceptionBox">
+        <div class="chat-reception-main">
+          <div class="chat-reception-dot"></div>
+          <div>
+            <div class="chat-reception-title">問い合わせ受付：<span id="chatReceptionLabel">${acceptingInquiries?'受付中':'受付一時停止中'}</span></div>
+            <div class="chat-reception-note" id="chatReceptionNote">${acceptingInquiries?'利用者画面から問い合わせを送信できます。':'停止中は利用者側の入力欄が無効になります。'}</div>
+          </div>
+        </div>
+        <button class="btn ${acceptingInquiries?'btn-warn':'btn-approve'} btn-sm" id="chatReceptionToggle">${acceptingInquiries?'受付を一時停止':'受付を再開'}</button>
+      </div>
+      <div class="chat-layout">
+        <div class="chat-list">
+          <div class="chat-list-head"><div class="chat-list-title">INQUIRIES</div><div style="font-size:11px;color:var(--text2)" id="chatCountLabel">0件</div></div>
+          <div class="chat-filter">
+            <button class="btn btn-ghost btn-sm ${chatFilter==='active'?'active':''}" data-filter="active">未完了</button>
+            <button class="btn btn-ghost btn-sm ${chatFilter==='open'?'active':''}" data-filter="open">未対応</button>
+            <button class="btn btn-ghost btn-sm ${chatFilter==='progress'?'active':''}" data-filter="progress">対応中</button>
+            <button class="btn btn-ghost btn-sm ${chatFilter==='closed'?'active':''}" data-filter="closed">完了</button>
+            <button class="btn btn-ghost btn-sm ${chatFilter==='all'?'active':''}" data-filter="all">全件</button>
+          </div>
+          <div class="chat-items" id="chatItems"></div>
+        </div>
+        <div class="chat-room" id="chatRoom"><div class="chat-room-empty">左の問い合わせを選択してください</div></div>
+      </div>`;
+    $("chatLogoutBtn").onclick=()=>signOut(auth);
+    $("chatReceptionToggle").onclick=toggleReception;
+    listenReceptionSettings();updateReceptionUi();
+    document.querySelectorAll(".chat-filter button").forEach(btn=>{
+      btn.onclick=()=>{chatFilter=btn.dataset.filter;renderChatArea();renderChatList();};
+    });
+    listenChats();renderChatList();
+    if(selectedChatId)renderRoom(selectedChatId);
+  }
+
+  async function loginAdmin(){
+    const email=$("chatLoginEmail").value.trim(),pw=$("chatLoginPassword").value;
+    if(!email||!pw)return alert("メールアドレスとパスワードを入力してください。");
+    try{await signInWithEmailAndPassword(auth,email,pw);window.showToast("チャット管理にログインしました");}
+    catch(e){console.error(e);alert("ログインできませんでした。");}
+  }
+
+  function listenChats(){
+    if(chatUnsub)return;
+    const q=query(collection(db,"chats"),orderBy("updatedAt","desc"));
+    chatUnsub=onSnapshot(q,snap=>{
+      chats=snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderChatList();updateGlobalBadge();
+      if(selectedChatId)renderRoom(selectedChatId);
+    },err=>{console.error(err);const el=$("chatItems");if(el)el.innerHTML='<div class="empty">問い合わせの取得に失敗しました。</div>';});
+  }
+
+  function filteredChats(){return chats.filter(c=>{const s=c.status||"open";if(chatFilter==="all")return true;if(chatFilter==="active")return s!=="closed";return s===chatFilter;});}
+
+  function renderChatList(){
+    const box=$("chatItems");if(!box)return;
+    const list=filteredChats();
+    $("chatCountLabel").textContent=list.length+"件";
+    if(!list.length){box.innerHTML='<div class="empty">問い合わせはありません</div>';return;}
+    box.innerHTML=list.map(c=>{
+      const unread=c.lastSender==="user"&&c.status!=="closed"?'<span class="chat-unread">!</span>':'';
+      return `<div class="chat-item ${c.id===selectedChatId?'active':''}" data-id="${esc(c.id)}">
+        <div class="chat-item-top"><div class="chat-item-name">${esc(c.userName||"未入力")}${unread}</div><div class="chat-item-time">${fmt(c.updatedAt)}</div></div>
+        <div class="chat-item-meta">社員番号：${esc(c.employeeNo||"—")} ／ 部署：${esc(c.department||"—")}</div>
+        ${c.toolName?`<div class="chat-item-meta">選択中：${esc(c.toolName)}</div>`:''}
+        <div class="chat-item-meta"><span class="${statusClass(c.status)}">${statusText(c.status)}</span></div>
+        <div class="chat-item-last">${esc(c.lastMessage||"メッセージなし")}</div>
+      </div>`;
+    }).join("");
+    box.querySelectorAll(".chat-item").forEach(item=>{item.onclick=()=>selectChat(item.dataset.id);});
+  }
+
+  function updateGlobalBadge(){
+    const n=chats.filter(c=>(c.status||"open")!=="closed"&&c.lastSender==="user").length;
+    const b=$("chat-nb");if(!b)return;
+    b.textContent=n;b.style.display=n>0?"inline-flex":"none";
+  }
+
+  function selectChat(id){
+    selectedChatId=id;renderChatList();renderRoom(id);listenMessages(id);
+    const c=chats.find(x=>x.id===id);
+    if(c&&(c.status||"open")==="open"){updateDoc(doc(db,"chats",id),{status:"progress",updatedAt:serverTimestamp()}).catch(console.error);}
+  }
+
+  function renderRoom(id){
+    const c=chats.find(x=>x.id===id);const room=$("chatRoom");if(!room)return;
+    if(!c){room.innerHTML='<div class="chat-room-empty">問い合わせが見つかりません</div>';return;}
+    room.innerHTML=`
+      <div class="chat-room-head">
+        <div>
+          <div class="chat-room-title">${esc(c.userName||"未入力")} <span style="font-family:var(--mono);font-size:11px;color:var(--text2)">${esc(c.employeeNo||"")}</span></div>
+          <div class="chat-room-meta">部署：${esc(c.department||"—")} ／ 状態：<span class="${statusClass(c.status)}">${statusText(c.status)}</span>${c.toolName?" ／ 選択中："+esc(c.toolName):""}</div>
+        </div>
+        <div class="chat-actions">
+          <button class="btn btn-warn btn-sm" id="chatProgressBtn">対応中</button>
+          <button class="btn btn-approve btn-sm" id="chatCloseBtn">完了</button>
+          <button class="btn btn-ghost btn-sm" id="chatOpenBtn">未対応に戻す</button>
+        </div>
+      </div>
+      <div class="chat-messages" id="chatMessages"><div class="loading">読み込み中...</div></div>
+      <div class="chat-reply">
+        <textarea id="chatReplyText" placeholder="返信を入力..." rows="2"></textarea>
+        <button class="btn btn-primary" id="chatReplyBtn">返信</button>
+      </div>`;
+    $("chatProgressBtn").onclick=()=>setChatStatus(id,"progress");
+    $("chatCloseBtn").onclick=()=>setChatStatus(id,"closed");
+    $("chatOpenBtn").onclick=()=>setChatStatus(id,"open");
+    $("chatReplyBtn").onclick=()=>sendReply(id);
+    $("chatReplyText").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendReply(id);}});
+    listenMessages(id);
+  }
+
+  function listenMessages(id){
+    if(msgUnsub)msgUnsub();
+    const q=query(collection(db,"chats",id,"messages"),orderBy("createdAt","asc"));
+    msgUnsub=onSnapshot(q,snap=>{
+      const box=$("chatMessages");if(!box)return;
+      if(!snap.docs.length){box.innerHTML='<div class="empty">まだメッセージはありません</div>';return;}
+      box.innerHTML=snap.docs.map(d=>{const m=d.data(),cls=m.sender==="admin"?"admin":"user",name=cls==="admin"?"管理人":"利用者";return `<div class="chat-msg ${cls}"><div>${esc(m.text)}</div><div class="chat-msg-time">${name} ・ ${fmt(m.createdAt)}</div></div>`;}).join("");
+      box.scrollTop=box.scrollHeight;
+    },console.error);
+  }
+
+  async function sendReply(id){
+    const t=$("chatReplyText"),text=t.value.trim();if(!text)return;
+    $("chatReplyBtn").disabled=true;
+    try{
+      await addDoc(collection(db,"chats",id,"messages"),{sender:"admin",senderName:auth.currentUser?.email||"管理人",text,createdAt:serverTimestamp(),read:false});
+      await updateDoc(doc(db,"chats",id),{status:"progress",lastMessage:text,lastSender:"admin",updatedAt:serverTimestamp()});
+      t.value="";
+    }catch(e){console.error(e);alert("返信できませんでした。");}
+    finally{$("chatReplyBtn").disabled=false;}
+  }
+
+  async function setChatStatus(id,status){
+    try{await updateDoc(doc(db,"chats",id),{status,updatedAt:serverTimestamp()});window.showToast("問い合わせ状態を更新しました");}
+    catch(e){console.error(e);window.showToast("状態更新に失敗しました","e");}
+  }
+
+  onAuthStateChanged(auth,()=>{
+    if(!auth.currentUser){if(chatUnsub){chatUnsub();chatUnsub=null;}if(msgUnsub){msgUnsub();msgUnsub=null;}if(settingsUnsub){settingsUnsub();settingsUnsub=null;}chats=[];selectedChatId="";}
+    if(auth.currentUser)listenReceptionSettings();
+    if($("view-chat")?.classList.contains("active"))renderChatArea();
+  });
+</script>
+</body>
+</html>
