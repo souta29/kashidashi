@@ -338,6 +338,7 @@ function showPartnerConfirm(){
   let clicked=false;
   card.querySelector('#nc-y').onclick=()=>{
     if(clicked)return;clicked=true;card.remove();addUser('OK');
+    registerPush();
     if(form.mode==='lend')askTool();else showMyLendings();
   };
   card.querySelector('#nc-n').onclick=()=>{
@@ -365,7 +366,7 @@ function showNameConfirm(emp){
   if(displayId)form.employeeId=displayId;
   card.innerHTML='<div class="nc-hd">'+bi('登録情報を確認してください','Vui lòng kiểm tra thông tin đăng ký')+'</div><div class="nc-bd"><div class="nc-name">'+emp.name+'</div><div class="nc-id">'+bi('社員番号：','Mã nhân viên: ')+displayId+'</div><div class="nc-acts"><button class="nc-yes" id="nc-y">OK</button><button class="nc-no" id="nc-n">'+bi('違います','Không đúng')+'</button></div></div>';
   let clicked=false;
-  card.querySelector('#nc-y').onclick=()=>{if(clicked)return;clicked=true;card.remove();addUser('OK');if(form.mode==='lend')askTool();else showMyLendings();};
+  card.querySelector('#nc-y').onclick=()=>{if(clicked)return;clicked=true;card.remove();addUser('OK');registerPush();if(form.mode==='lend')askTool();else showMyLendings();};
   card.querySelector('#nc-n').onclick=()=>{if(clicked)return;clicked=true;card.remove();addUser(bit('違います','Không đúng'));form.employeeId='';form.name='';botSay(bit('社員番号をもう一度入力してください。','Vui lòng nhập lại mã nhân viên.'),400).then(()=>showEmpIdCard());};
   addMsg(card,'bot',true);
 }
@@ -690,6 +691,46 @@ window.getLoanChatContext=function(){
   const f=(typeof form!=='undefined'&&form)?form:{};
   return{employeeNo:f.employeeId||'',userName:f.name||'',department:f.department||'',toolName:f.toolName||f.toolOther||''};
 };
+
+// ===== Web Push購読 =====
+const VAPID_PUBLIC_KEY='BFZzJBYeFHY4Ehjlhf22crVTiXz1Ht0iXOX4TSSS9L0J4CLOJb2DDwfL0lWI_sxxdU0Td1oBfNMqsZorEH_BFXQ';
+
+async function registerPush(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)) return;
+  try{
+    // Service Worker登録
+    const reg=await navigator.serviceWorker.register('./sw.js');
+    // 既に購読済みか確認
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub){
+      // 通知許可を求める
+      const perm=await Notification.requestPermission();
+      if(perm!=='granted') return;
+      // 購読
+      sub=await reg.pushManager.subscribe({
+        userVisibleOnly:true,
+        applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+    // GASに購読情報を送信
+    const ctx=window.getLoanChatContext();
+    await apiPost({
+      action:'savePushSub',
+      employeeId:ctx.employeeNo||form.employeeId||'',
+      name:ctx.userName||form.name||'',
+      subscription:sub.toJSON()
+    });
+  }catch(e){
+    console.log('Push登録スキップ:',e.message);
+  }
+}
+
+function urlBase64ToUint8Array(base64String){
+  const padding='='.repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');
+  const rawData=atob(base64);
+  return Uint8Array.from([...rawData].map(c=>c.charCodeAt(0)));
+}
 
 window.addEventListener('DOMContentLoaded',()=>{start();});
 </script>
